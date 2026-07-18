@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <time.h>
 #include "SDL.h"
@@ -96,6 +97,38 @@ char *numbers[11];
 char gdmodestr[] = "CASTLE";
 
 PLAYEROBJ plr;
+
+// ---- diagnostic log (RAPTOR.LOG in the save directory) --------------------
+extern char cdpath[];
+extern int cdflag;
+
+static FILE *log_file;
+
+void LOG_Printf(const char *fmt, ...)
+{
+    va_list args;
+
+    if (!log_file)
+        return;
+
+    va_start(args, fmt);
+    vfprintf(log_file, fmt, args);
+    va_end(args);
+    fputc('\n', log_file);
+    fflush(log_file);
+}
+
+void LOG_Init(void)
+{
+    char path[1024];
+
+    if (!cdflag)
+        return;
+
+    snprintf(path, sizeof(path), "%sRAPTOR.LOG", cdpath);
+    log_file = fopen(path, "w");
+    LOG_Printf("Raptor Enhanced start; save path: %s", cdpath);
+}
 
 char* g_highmem;
 
@@ -1310,6 +1343,7 @@ main(
     InitScreen();
 
     RAP_InitLoadSave();
+    LOG_Init();
     
 #if _WIN32 || __linux__ || __APPLE__
     if (access(RAP_SetupFilename(), 0))
