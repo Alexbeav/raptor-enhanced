@@ -12,6 +12,10 @@ jobs:
       - uses: microsoft/setup-msbuild@v2
       - name: Build Release x64
         run: msbuild msvc/raptor.sln /m /v:minimal /p:Configuration=Release /p:Platform=x64
+      - name: Verify CMake Release build
+        run: |
+          cmake -S . -B build -A x64
+          cmake --build build --config Release --parallel
       - uses: actions/upload-artifact@v4
         with:
           name: raptor-enhanced-x64

@@ -966,7 +966,7 @@ WIN_Register(
             
             case REG_CALLSIGN:
                 SWD_GetFieldText(window, REG_CALLSIGN, tp.callsign);
-                SWD_GetFieldText(window, REG_CALLSIGN, tp.name);
+                SWD_GetFieldText(window, REG_NAME, tp.name);
                 if (!strlen(tp.name))
                 {
                     fi_sec_field = false;

@@ -8,16 +8,30 @@ game files by the separately distributed installer; the engine detects its
 presence at startup and otherwise behaves like the stock port.
 
 No game data or game code by Scott Host is included. GPL-2, like the port it
-is based on. Upstream README follows.
+is based on. Upstream build and configuration documentation follows.
 
 Companion project: the [Raptor Map Editor](https://github.com/Alexbeav/raptor-map-editor)
 edits levels, enemies, artwork, and music, and can install Delta Sector from
 the browser. The development history of both projects is chronicled in its
 [DEVLOG](https://github.com/Alexbeav/raptor-map-editor/blob/main/DEVLOG.md).
 
+## Quick start
+
+1. Download the latest Windows package from
+   [Raptor Enhanced releases](https://github.com/Alexbeav/raptor-enhanced/releases/latest).
+2. Extract it into a folder containing your legally obtained Raptor v1.2+
+   `FILE0000.GLB`–`FILE0004.GLB` data files, then run `raptor.exe`.
+3. Delta Sector is optional. Install it from the bundled
+   `DeltaSector-optional` folder, or generate its patched archives locally in
+   the [Raptor Map Editor](https://alexbeav.github.io/raptor-map-editor/).
+
+Raptor Enhanced currently ships as a Windows build. The upstream engine also
+supports other platforms; the build and configuration reference below is
+retained from that project.
+
 ---
 
-# Raptor
+# Upstream Raptor documentation
 Based on the reverse-engineered codebase from Raptor Call Of The Shadows by nukeykt
 
 ## Media
@@ -26,14 +40,6 @@ Click on the thumbnail to watch some videos showing the project in action
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Nt2HfchiudY/0.jpg)](https://www.youtube.com/channel/UCedmTTlonJK5DvkiMpA_teQ)
 ## Information
 Original Raptor Call Of The Shadows author Scott Host is working on a new modernized version of the classic called Raptor Remixed. If you are a Raptor fan it would be cool if you would support the project on Kickstarter. For more information visit [www.mking.com](https://www.mking.com)
-
-## Quick start
-Release builds are available for Windows, macOS and Android.
-To download the latest release build for your platform, click [Download](https://github.com/skynettx/raptor/releases/latest).
-Then install the downloaded release build on your system by following the instructions of the installer.
-You then need to obtain the assets (GLB files) of the shareware or full version 1.2 or higher yourself and copy them into the installation directory or the external system specific directory.
-That's it now Raptor is ready to play.
-For those who want to build themselves or who want more configuration information, continue below otherwise you're done here.
 
 ## Installing
 You need the original assets (GLB files) from Raptor Call Of The Shadows shareware or full version 1.2 or higher.
