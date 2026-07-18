@@ -55,6 +55,8 @@ CSPRITE *csprite;
 char *ml;
 char *savebuffer;
 
+static int RAP_ValidPilotFile(const char *path, PLAYEROBJ *pilot);
+
 /***************************************************************************
 SaveRead8 () - Reads 8 bit unsigned char from save file buffer
  ***************************************************************************/
@@ -374,7 +376,7 @@ RAP_AreSavedFiles(
         else
             sprintf(temp, fmt, loop);
         
-        if (!access(temp, 0))
+        if (!access(temp, 0) && RAP_ValidPilotFile(temp, NULL))
             return 1;
     }
     
@@ -389,7 +391,8 @@ one of those used to corrupt memory.
  ***************************************************************************/
 static int
 RAP_ValidPilotFile(
-    const char *path
+    const char *path,
+    PLAYEROBJ *pilot
 )
 {
     char raw[sizeof(PLAYEROBJ)];
@@ -402,9 +405,19 @@ RAP_ValidPilotFile(
     if (!handle)
         return 0;
 
-    fseek(handle, 0, SEEK_END);
+    if (fseek(handle, 0, SEEK_END) != 0)
+    {
+        fclose(handle);
+        LOG_Printf("pilot %s rejected: cannot determine file size", path);
+        return 0;
+    }
     size = ftell(handle);
-    fseek(handle, 0, SEEK_SET);
+    if (size < 0 || fseek(handle, 0, SEEK_SET) != 0)
+    {
+        fclose(handle);
+        LOG_Printf("pilot %s rejected: cannot determine file size", path);
+        return 0;
+    }
 
     if (size < (long)sizeof(PLAYEROBJ)
         || fread(raw, 1, sizeof(PLAYEROBJ), handle) != sizeof(PLAYEROBJ))
@@ -445,6 +458,26 @@ RAP_ValidPilotFile(
             return 0;
         }
     }
+
+    for (i = 0; i < 4; i++)
+    {
+        if (tp.diff[i] < DIFF_0 || tp.diff[i] > DIFF_3)
+        {
+            LOG_Printf("pilot %s skipped: difficulty %d out of range",
+                path, tp.diff[i]);
+            return 0;
+        }
+    }
+
+    if ((tp.trainflag != 0 && tp.trainflag != 1)
+        || (tp.fintrain != 0 && tp.fintrain != 1))
+    {
+        LOG_Printf("pilot %s skipped: training flags out of range", path);
+        return 0;
+    }
+
+    if (pilot)
+        *pilot = tp;
 
     return 1;
 }
@@ -525,7 +558,6 @@ RAP_IsSaveFile(
     PLAYEROBJ tp;
     char temp[PATH_MAX];
     int rval, loop;
-    FILE *handle;
     rval = 0;
     
     for (loop = 0; loop < MAX_SAVE; loop++)
@@ -535,21 +567,8 @@ RAP_IsSaveFile(
         else
             sprintf(temp, fmt, loop);
         
-        handle = fopen(temp, "rb");
-        
-        if (handle)
+        if (RAP_ValidPilotFile(temp, &tp))
         {
-            savebuffer = (char*)malloc(sizeof(tp));
-            fread(savebuffer, 1, sizeof(tp), handle);
-            
-            //GLB_DeCrypt(gdmodestr, savebuffer, sizeof(tp)); //missing in v1.2
-            
-            ReadPlayer(&tp);
-            
-            fclose(handle);
-            free(savebuffer);
-            SaveResetReadWritePosition();
-            
             if (!strcmp(tp.name, in_plr->name) && !strcmp(tp.callsign, in_plr->callsign))
             {
                 rval = 1;
@@ -591,7 +610,7 @@ RAP_LoadPlayer(
     else
         sprintf(filename, fmt, filepos);
 
-    if (!RAP_ValidPilotFile(filename))
+    if (!RAP_ValidPilotFile(filename, NULL))
     {
         LOG_Printf("RAP_LoadPlayer: refusing incompatible pilot %s", filename);
         WIN_Msg("Incompatible Pilot File !!!");
@@ -648,6 +667,12 @@ RAP_LoadPlayer(
     game_wave[0] = plr.game_wave[0];
     game_wave[1] = plr.game_wave[1];
     game_wave[2] = plr.game_wave[2];
+
+    if (cur_game == 3 && !sector4_installed)
+    {
+        LOG_Printf("RAP_LoadPlayer: Delta Sector is unavailable; selecting Bravo Sector");
+        cur_game = 0;
+    }
 
     // Delta Sector wave progress lives in a sidecar file: the versionless
     // pilot format cannot grow without corrupting every existing save.
@@ -878,7 +903,7 @@ RAP_LoadWin(
         
         if (!access(temp, 0))
         {
-            if (!RAP_ValidPilotFile(temp))
+            if (!RAP_ValidPilotFile(temp, NULL))
                 continue;
             if (pos == -1)
                 pos = loop;
