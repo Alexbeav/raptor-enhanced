@@ -1047,6 +1047,7 @@ reg_exit:
         tp.diff[0] = diff;
         tp.diff[1] = diff;
         tp.diff[2] = diff;
+        tp.diff[3] = diff;      // Delta Sector honors the chosen difficulty too
         
         if (diff == DIFF_0)
         {
