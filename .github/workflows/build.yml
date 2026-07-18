@@ -25,3 +25,20 @@ jobs:
           path: |
             msvc/x64/Release/raptor.exe
             msvc/x64/Release/raptorsetup/raptorsetup.exe
+
+  linux-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libasound2-dev
+      - name: Build Release
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+          cmake --build build --parallel
+      - uses: actions/upload-artifact@v4
+        with:
+          name: raptor-enhanced-linux-x64
+          path: |
+            build/bin/raptor
+            build/bin/raptorsetup
