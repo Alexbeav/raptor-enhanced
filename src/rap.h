@@ -28,6 +28,7 @@ extern int demo_flag;
 extern char *palette;
 extern int ingameflag;
 extern int gameflag[4];
+extern int sector4_installed;
 extern int godmode;
 extern int cur_game;
 extern int game_wave[4];
@@ -45,6 +46,7 @@ extern int startendwave;
 extern int gl_cnt;
 extern int g_oldsuper, g_oldshield;
 extern int playerx, playery;
+extern int o_playerx, o_playery;
 extern char gdmodestr[];
 extern int playerbasepic;
 

@@ -6,3 +6,7 @@ Makefile
 build
 .vscode
 **/.DS_Store
+msvc/Release
+msvc/x64
+msvc/raptor
+msvc/.vs

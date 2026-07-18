@@ -35,6 +35,8 @@ typedef struct ANIMS_S
     int item;
     int dx;
     int dy;
+    int odx, ody;                     // prev draw pos (interpolation)
+    int spawned;                      // false until first draw pos computed
     int x;
     int y;
     int curframe;

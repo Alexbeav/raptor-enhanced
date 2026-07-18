@@ -76,6 +76,20 @@ extern int retraceflag;
 extern int G3D_viewx, G3D_viewy, G3D_viewz;
 extern int G3D_x, G3D_y, G3D_z, G3D_screenx, G3D_screeny;
 
+// Motion interpolation ("smooth" mode). The game logic runs at its normal
+// ~23fps; the frame is drawn/presented multiple times per logic step with
+// moving objects interpolated between their previous and current positions.
+// g_commit is true only on the last sub-frame, so per-frame side effects
+// (scroll advance, spent-shot removal, anim counters) fire exactly once.
+extern int g_smooth;                    // 0 = classic single present, 1 = interpolate
+extern int g_lerp_num, g_lerp_den;      // interpolation fraction num/den (den never 0)
+extern int g_commit;                    // apply per-logic-frame side effects this sub-frame
+
+static inline int GFX_Lerp(int cur, int prev)
+{
+    return prev + (cur - prev) * g_lerp_num / g_lerp_den;
+}
+
 void GFX_UpdateTimer(void);
 
 void GFX_InitSystem(void);

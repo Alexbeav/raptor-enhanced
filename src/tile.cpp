@@ -438,8 +438,13 @@ TILE_Display(
         ts++;
     } while (1);
     
+    // Scroll advance is a per-logic-frame side effect: only on the commit
+    // sub-frame, so re-drawing for interpolation doesn't scroll N times faster.
+    if (!g_commit)
+        return;
+
     tileyoff++;
-    
+
     if (tileyoff > 0)
     {
         if (last_tile && tileyoff >= 0)
@@ -452,7 +457,7 @@ TILE_Display(
             tileyoff -= MAP_BLOCKSIZE;
             tilepos -= MAP_COLS;
         }
-        
+
         if (tilepos <= 0)
         {
             tilepos = 0;

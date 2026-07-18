@@ -1422,10 +1422,11 @@ WIN_LoadComp(
 {
     char temp[40];
     int window;
-    char sect[3][15] = {
+    char sect[4][15] = {
         "BRAVO SECTOR",
         "TANGO SECTOR",
-        "OUTER REGIONS"
+        "OUTER REGIONS",
+        "DELTA SECTOR"
     };
 
     window = SWD_InitMasterWindow(FILE140_LOADCOMP_SWD);
@@ -1576,7 +1577,15 @@ WIN_ShipComp(
             if (godmode || demo_flag)
                 cur_game = 2;
             break;
-        
+
+        case SC_D:                                   // select Delta Sector (community 4th campaign)
+            if (sector4_installed)
+            {
+                cur_game = 3;
+                goto exit_shipcomp;
+            }
+            break;
+
         case SC_Q:
             if (godmode || demo_flag)
                 game_wave[cur_game] = 0;
@@ -1656,6 +1665,12 @@ WIN_ShipComp(
                     goto abort_shipcomp;
                 }
                 cur_game = 2;
+                goto exit_shipcomp;
+
+            case COMP_GAME4:                         // Delta Sector ( community 4th campaign )
+                if (!sector4_installed)
+                    break;
+                cur_game = 3;
                 goto exit_shipcomp;
             
             case COMP_B1:
@@ -1841,6 +1856,9 @@ WIN_MainLoop(
         case 2:
             SND_PlaySong(songsg3[game_wave[cur_game]], 1, 1);
             break;
+        case 3:                                     // Delta Sector reuses Outer Regions music
+            SND_PlaySong(songsg3[game_wave[cur_game]], 1, 1);
+            break;
         }
         
         WIN_LoadComp();
@@ -1911,11 +1929,14 @@ WIN_MainLoop(
                 INTRO_EndGame(cur_game);
                 cur_game++;
             }
-            
-            if (cur_game >= 3)
+
+            if (cur_game == 3 && !sector4_installed)
+                cur_game = 0;                        // skip Delta Sector if not installed
+
+            if (cur_game >= 4)
                 cur_game = 0;
-            
-            if (!gameflag[cur_game])
+
+            if (cur_game != 3 && !gameflag[cur_game])
                 cur_game = 0;
             
             continue;

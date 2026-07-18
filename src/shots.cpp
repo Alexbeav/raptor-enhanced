@@ -1018,14 +1018,17 @@ SHOTS_Think(
 
     for (shot = first_shots.next; &last_shots != shot; shot = shot->next)
     {
+        shot->ox = shot->x;          // snapshot for interpolation
+        shot->oy = shot->y;
+
         lib = shot->lib;
-        
+
         switch (lib->beam)
         {
         default:
             EXIT_Error("SHOTS_Think()");
             break;
-        
+
         case S_SHOOT:
             shot->pic = lib->pic[shot->curframe];
             shot->x = shot->move.x - lib->hlx;
@@ -1270,14 +1273,15 @@ SHOTS_Display(
             break;
         
         case S_SHOOT:
-            GFX_PutSprite(shot->pic, shot->x, shot->y);
+            GFX_PutSprite(shot->pic, GFX_Lerp(shot->x, shot->ox), GFX_Lerp(shot->y, shot->oy));
             break;
         
         case S_LINE:
             GFX_Line(player_cx + 1, player_cy, shot->move.x, shot->move.y, 69);
             GFX_Line(player_cx - 1, player_cy, shot->move.x, shot->move.y, 69);
             GFX_Line(player_cx, player_cy, shot->move.x, shot->move.y, 64);
-            shot = SHOTS_Remove(shot);
+            if (g_commit)                       // remove spent line-shot once per logic frame
+                shot = SHOTS_Remove(shot);
             break;
         
         case S_BEAM:
@@ -1298,9 +1302,12 @@ SHOTS_Display(
             
             if (y > 0)
                 GFX_PutSprite((char*)h, x, y);
-            
-            shot->cnt++;
-            shot->cnt = shot->cnt % 4;
+
+            if (g_commit)                       // beam anim counter: once per logic frame
+            {
+                shot->cnt++;
+                shot->cnt = shot->cnt % 4;
+            }
             break;
         }
     }

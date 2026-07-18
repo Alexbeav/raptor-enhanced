@@ -399,6 +399,8 @@ ENEMY_Add(
     newe->y -= newe->hly;
     newe->x2 = newe->x + newe->width;
     newe->y2 = newe->y + newe->height;
+    newe->ox = newe->x;               // spawn: no interpolation on first frame
+    newe->oy = newe->y;
     newe->move.x = newe->sx = newe->x;
     newe->move.y = newe->sy = newe->y;
     newe->frame_rate = LE_LONG(curlib->frame_rate);
@@ -1003,18 +1005,9 @@ void ENEMY_Think(
             continue;
         }
         
-        if (LE_LONG(curlib->shadow))
-        {
-            if (sprite->groundflag)
-            {
-                SHADOW_GAdd(sprite->item, sprite->x, sprite->y);
-            }
-            else
-            {
-                SHADOW_Add(sprite->item, sprite->x, sprite->y);
-            }
-        }
-        
+        // Enemy shadows are queued per sub-frame in ENEMY_AddShadows() (at
+        // interpolated positions), not here, so they survive every sub-frame.
+
         if (LE_LONG(curlib->bossflag))
         {
             numboss++;
@@ -1169,47 +1162,94 @@ void ENEMY_Think(
 }
 
 /***************************************************************************
+ENEMY_SavePrev () - Snapshot positions before ENEMY_Think, for interpolation
+ ***************************************************************************/
+void
+ENEMY_SavePrev(
+    void
+)
+{
+    SPRITE_SHIP *spt;
+
+    for (spt = first_enemy.next; &last_enemy != spt; spt = spt->next)
+    {
+        spt->ox = spt->x;
+        spt->oy = spt->y;
+    }
+}
+
+/***************************************************************************
+ENEMY_AddShadows () - Queue enemy shadows at interpolated positions
+ ***************************************************************************/
+void
+ENEMY_AddShadows(
+    void
+)
+{
+    SPRITE_SHIP *spt;
+    int dx, dy;
+
+    for (spt = first_enemy.next; &last_enemy != spt; spt = spt->next)
+    {
+        if (!LE_LONG(spt->lib->shadow))
+            continue;
+
+        dx = GFX_Lerp(spt->x, spt->ox);
+        dy = GFX_Lerp(spt->y, spt->oy);
+
+        if (spt->groundflag)
+            SHADOW_GAdd(spt->item, dx, dy);
+        else
+            SHADOW_Add(spt->item, dx, dy);
+    }
+}
+
+/***************************************************************************
 ENEMY_DisplayGround () - Displays Ground ENEMY pics
  ***************************************************************************/
-void 
+void
 ENEMY_DisplayGround(
     void
 )
 {
     SPRITE_SHIP *spt;
-    
+
     for (spt = first_enemy.next; &last_enemy != spt; spt = spt->next)
     {
         if (!spt->groundflag)
             continue;
-        GFX_PutSprite((char*)GLB_GetItem(spt->item), spt->x, spt->y);
+        GFX_PutSprite((char*)GLB_GetItem(spt->item), GFX_Lerp(spt->x, spt->ox), GFX_Lerp(spt->y, spt->oy));
     }
 }
 
 /***************************************************************************
 ENEMY_DisplaySky () - Displays AIR ENEMY SHIPS
  ***************************************************************************/
-void 
+void
 ENEMY_DisplaySky(
     void
 )
 {
-    int i;
+    int i, dx, dy;
     SPRITE_SHIP *spt;
-    
+
     for (spt = first_enemy.next; &last_enemy != spt; spt = spt->next)
     {
         if (spt->groundflag)
             continue;
-        
-        GFX_PutSprite((char*)GLB_GetItem(spt->item), spt->x, spt->y);
-        
+
+        dx = GFX_Lerp(spt->x, spt->ox);
+        dy = GFX_Lerp(spt->y, spt->oy);
+
+        GFX_PutSprite((char*)GLB_GetItem(spt->item), dx, dy);
+
         for (i = 0; i < LE_LONG(spt->lib->numengs); i++)
         {
-            FLAME_Up(spt->x + LE_SHORT(spt->lib->engx[i]), spt->y + LE_SHORT(spt->lib->engy[i]), LE_SHORT(spt->lib->englx[i]), spt->eframe);
+            FLAME_Up(dx + LE_SHORT(spt->lib->engx[i]), dy + LE_SHORT(spt->lib->engy[i]), LE_SHORT(spt->lib->englx[i]), spt->eframe);
         }
-        
-        spt->eframe ^= 1;
+
+        if (g_commit)
+            spt->eframe ^= 1;
     }
 }
 

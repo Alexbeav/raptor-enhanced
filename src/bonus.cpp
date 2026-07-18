@@ -162,6 +162,7 @@ BONUS_Add(
     cur->x = MAP_LEFT + x;
     cur->y = y;
     cur->pos = wrand() % 16;
+    cur->spawned = 0;
 }
 
 /***************************************************************************
@@ -184,13 +185,26 @@ BONUS_Think(
     for (cur = first_bonus.next; &last_bonus != cur; cur = cur->next)
     {
         cur->item = cur->lib->item + cur->curframe;
-        
+
+        if (cur->spawned)                          // snapshot prev draw pos
+        {
+            cur->obx = cur->bx; cur->oby = cur->by;
+            cur->ogx = cur->gx; cur->ogy = cur->gy;
+        }
+
         cur->bx = cur->x - (BONUS_WIDTH / 2) + xpos[cur->pos];
         cur->by = cur->y - (BONUS_HEIGHT / 2) + ypos[cur->pos];
-        
+
         cur->gx = cur->x - (glow_lx>>1) + xpos[cur->pos];
         cur->gy = cur->y - (glow_ly>>1) + ypos[cur->pos];
-        
+
+        if (!cur->spawned)                         // first frame: no interpolation
+        {
+            cur->obx = cur->bx; cur->oby = cur->by;
+            cur->ogx = cur->gx; cur->ogy = cur->gy;
+            cur->spawned = 1;
+        }
+
         cur->y++;
         
         if (gcnt & 1)
@@ -269,11 +283,11 @@ BONUS_Display(
     {
         if (!cur->dflag)
         {
-            GFX_PutSprite((char*)GLB_GetItem(cur->item), cur->bx, cur->by);
-            GFX_ShadeShape(LIGHT, (char*)GLB_GetItem(glow[cur->curglow]), cur->gx, cur->gy);
+            GFX_PutSprite((char*)GLB_GetItem(cur->item), GFX_Lerp(cur->bx, cur->obx), GFX_Lerp(cur->by, cur->oby));
+            GFX_ShadeShape(LIGHT, (char*)GLB_GetItem(glow[cur->curglow]), GFX_Lerp(cur->gx, cur->ogx), GFX_Lerp(cur->gy, cur->ogy));
         }
         else
-            GFX_PutSprite((char*)GLB_GetItem(FILE10f_N$_PIC), cur->bx, cur->by);
+            GFX_PutSprite((char*)GLB_GetItem(FILE10f_N$_PIC), GFX_Lerp(cur->bx, cur->obx), GFX_Lerp(cur->by, cur->oby));
     }
 }
 
