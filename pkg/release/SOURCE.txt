@@ -1,0 +1,19 @@
+SOURCE CODE AVAILABILITY (GPL-2 requirement)
+============================================
+
+This program is Free Software under the GNU General Public License,
+version 2 (see COPYING.txt). You are entitled to the complete
+corresponding source code.
+
+This build is a modification of the open-source Raptor engine port:
+    https://github.com/skynettx/raptor   (nukeykt / skynettx, GPL-2)
+
+The modifications in this build, relative to that port's tree, are
+engine refinements and support for the optional Delta Sector campaign
+(src/rap.cpp, src/windows.cpp, src/winids.h, src/i_video.cpp,
+src/gfxapi.* and related files).
+
+    SOURCE: https://github.com/Alexbeav/raptor-enhanced
+
+If you received this package without a source URL, request the source
+from whoever gave it to you - the GPL entitles you to it.

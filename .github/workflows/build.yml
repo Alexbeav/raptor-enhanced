@@ -42,3 +42,44 @@ jobs:
           path: |
             build/bin/raptor
             build/bin/raptorsetup
+
+  release:
+    # Runs on version tags (v*): assembles the same package layout as the
+    # hand-made releases (payload from pkg/release/) plus a Linux tarball,
+    # and attaches both to a DRAFT release — review the notes, then publish.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows-x64, linux-x64]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Assemble packages
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          # Windows zip: payload + freshly built exes
+          mkdir -p RaptorEnhanced
+          cp -r pkg/release/. RaptorEnhanced/
+          find artifacts/raptor-enhanced-x64 -name "*.exe" -exec cp {} RaptorEnhanced/ \;
+          zip -r "RaptorEnhanced-$VER.zip" RaptorEnhanced
+          # Linux tarball: payload minus Windows bits + Linux binaries
+          mkdir -p "RaptorEnhanced-linux/DeltaSector-optional"
+          cp pkg/release/COPYING.txt pkg/release/README.txt pkg/release/SOURCE.txt pkg/release/SETUP.INI RaptorEnhanced-linux/
+          cp pkg/release/DeltaSector-optional/install_delta_sector.py pkg/release/DeltaSector-optional/raptor_glb.py pkg/release/DeltaSector-optional/README.txt "RaptorEnhanced-linux/DeltaSector-optional/"
+          cp artifacts/raptor-enhanced-linux-x64/raptor artifacts/raptor-enhanced-linux-x64/raptorsetup RaptorEnhanced-linux/
+          chmod +x RaptorEnhanced-linux/raptor RaptorEnhanced-linux/raptorsetup
+          tar -czf "RaptorEnhanced-$VER-linux-x64.tar.gz" --transform "s|^RaptorEnhanced-linux|RaptorEnhanced|" RaptorEnhanced-linux
+      - name: Create or update draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+              --title "Raptor Enhanced $VER" --draft --generate-notes
+          fi
+          gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber \
+            "RaptorEnhanced-$VER.zip" "RaptorEnhanced-$VER-linux-x64.tar.gz"
