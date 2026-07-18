@@ -22,6 +22,11 @@ HOW TO INSTALL
     2. Double-click  install_delta_sector.bat
        (If Windows asks, allow it - it just runs the Python script.)
 
+  Linux, easiest:
+    1. Copy this whole "DeltaSector-optional" folder into your Raptor
+       folder (next to FILE0000.GLB).
+    2. Run:  sh DeltaSector-optional/install_delta_sector.sh
+
   Any system, from a terminal:
     python install_delta_sector.py  "path\to\your\Raptor folder"
     (run with no path if you copied it into the Raptor folder first)
