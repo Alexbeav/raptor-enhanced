@@ -17,17 +17,21 @@ the browser. The development history of both projects is chronicled in its
 
 ## Quick start
 
-1. Download the latest Windows package from
-   [Raptor Enhanced releases](https://github.com/Alexbeav/raptor-enhanced/releases/latest).
+1. Download the latest package from
+   [Raptor Enhanced releases](https://github.com/Alexbeav/raptor-enhanced/releases/latest) —
+   a Windows zip or a Linux x64 tarball.
 2. Extract it into a folder containing your legally obtained Raptor v1.2+
-   `FILE0000.GLB`–`FILE0004.GLB` data files, then run `raptor.exe`.
-3. Delta Sector is optional. Install it from the bundled
-   `DeltaSector-optional` folder, or generate its patched archives locally in
-   the [Raptor Map Editor](https://alexbeav.github.io/raptor-map-editor/).
+   `FILE0000.GLB`–`FILE0004.GLB` data files, then run `raptor.exe`
+   (Windows) or `./raptor` (Linux; needs the SDL2 runtime, e.g.
+   `sudo apt install libsdl2-2.0-0`).
+3. Delta Sector is optional. Install it with the bundled
+   `DeltaSector-optional` installer (Python, works on both platforms), or
+   generate its patched archives locally in the
+   [Raptor Map Editor](https://alexbeav.github.io/raptor-map-editor/).
 
-Raptor Enhanced currently ships as a Windows build. The upstream engine also
-supports other platforms; the build and configuration reference below is
-retained from that project.
+Releases are packaged automatically by CI on version tags: the same engine
+sources build for Windows (MSVC) and Linux (GCC/SDL2/ALSA). The upstream
+build and configuration reference below is retained from that project.
 
 ---
 
