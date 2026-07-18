@@ -29,6 +29,9 @@ extern char *palette;
 extern int ingameflag;
 extern int gameflag[4];
 extern int sector4_installed;
+
+void LOG_Init(void);
+void LOG_Printf(const char *fmt, ...);
 extern int godmode;
 extern int cur_game;
 extern int game_wave[4];

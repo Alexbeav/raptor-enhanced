@@ -663,6 +663,12 @@ OBJS_Load(
 {
     OBJ *cur;
 
+    if (inobj->type < 0 || inobj->type >= S_LAST_OBJECT)
+    {
+        LOG_Printf("OBJS_Load: invalid object type %d - skipped", inobj->type);
+        return 0;
+    }
+
     cur = OBJS_Get();
     if (!cur)
         return 0;
@@ -671,10 +677,10 @@ OBJS_Load(
     cur->type = inobj->type;
     cur->lib = &obj_lib[inobj->type];
     cur->inuse = inobj->inuse;
-    
+
     if (cur->inuse)
         p_objs[inobj->type] = cur;
-    
+
     return 1;
 }
 

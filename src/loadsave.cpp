@@ -382,6 +382,74 @@ RAP_AreSavedFiles(
 }
 
 /***************************************************************************
+RAP_ValidPilotFile() - Structural check that a CHAR file is a 1994-format
+pilot this engine can parse. The 2010/2015 Windows editions keep their own,
+differently-formatted pilots under the same folder and file names; loading
+one of those used to corrupt memory.
+ ***************************************************************************/
+static int
+RAP_ValidPilotFile(
+    const char *path
+)
+{
+    char raw[sizeof(PLAYEROBJ)];
+    PLAYEROBJ tp;
+    FILE *handle;
+    long size;
+    int i;
+
+    handle = fopen(path, "rb");
+    if (!handle)
+        return 0;
+
+    fseek(handle, 0, SEEK_END);
+    size = ftell(handle);
+    fseek(handle, 0, SEEK_SET);
+
+    if (size < (long)sizeof(PLAYEROBJ)
+        || fread(raw, 1, sizeof(PLAYEROBJ), handle) != sizeof(PLAYEROBJ))
+    {
+        fclose(handle);
+        LOG_Printf("pilot %s rejected: too short (%ld bytes)", path, size);
+        return 0;
+    }
+    fclose(handle);
+
+    GLB_DeCrypt(gdmodestr, raw, sizeof(PLAYEROBJ));
+    memcpy(&tp, raw, sizeof(PLAYEROBJ));
+
+    if ((size - (long)sizeof(PLAYEROBJ)) % 24 != 0
+        || tp.numobjs != (int)((size - (long)sizeof(PLAYEROBJ)) / 24))
+    {
+        LOG_Printf("pilot %s skipped: %ld bytes / %d objects does not match "
+            "this engine's save layout (2010/2015 Edition pilot?)",
+            path, size, tp.numobjs);
+        return 0;
+    }
+
+    if (tp.numobjs < 0 || tp.numobjs > 64
+        || tp.id_pic < 0 || tp.id_pic > 3
+        || tp.cur_game < 0 || tp.cur_game > 3
+        || tp.name[19] != 0 || tp.callsign[11] != 0)
+    {
+        LOG_Printf("pilot %s skipped: header fields out of range", path);
+        return 0;
+    }
+
+    for (i = 0; i < 3; i++)
+    {
+        if (tp.game_wave[i] < 0 || tp.game_wave[i] > 8)
+        {
+            LOG_Printf("pilot %s skipped: wave %d out of range",
+                path, tp.game_wave[i]);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/***************************************************************************
 RAP_ReadFile() - Reads file into buffer for sizerec and DECRYTES
  ***************************************************************************/
 int                                 // RETURN: size of record
@@ -522,9 +590,17 @@ RAP_LoadPlayer(
         sprintf(filename, cdfmt, cdpath, filepos);
     else
         sprintf(filename, fmt, filepos);
-    
+
+    if (!RAP_ValidPilotFile(filename))
+    {
+        LOG_Printf("RAP_LoadPlayer: refusing incompatible pilot %s", filename);
+        WIN_Msg("Incompatible Pilot File !!!");
+        return 0;
+    }
+    LOG_Printf("RAP_LoadPlayer: loading %s", filename);
+
     handle = fopen(filename, "rb");
-    
+
     if (!handle)
     {
         WIN_Msg("Load Player Error");
@@ -720,6 +796,7 @@ RAP_LoadMap(
     GLB_FreeAll();
     
     sprintf(temp, "MAP%uG%u_MAP", game_wave[cur_game] + 1, cur_game + 1);
+    LOG_Printf("RAP_LoadMap: %s", temp);
     map_item = GLB_GetItemID(temp);
     
     if (map_item == -1)
@@ -801,12 +878,14 @@ RAP_LoadWin(
         
         if (!access(temp, 0))
         {
+            if (!RAP_ValidPilotFile(temp))
+                continue;
             if (pos == -1)
                 pos = loop;
             strncpy(filenames[loop], temp, PATH_MAX);
         }
     }
-    
+
     if (pos == -1)
         return-1;
     
@@ -961,7 +1040,8 @@ RAP_LoadWin(
             
             case LOAD_LOAD:
                 filepos = pos;
-                RAP_LoadPlayer();
+                if (!RAP_LoadPlayer())
+                    break;                   // incompatible: stay in the menu
                 rval = 1;
                 goto load_exit;
             }
