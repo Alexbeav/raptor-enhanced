@@ -36,6 +36,8 @@ typedef struct ESHOT_S
     int curframe;                            // CURRENT ANIM FRAME
     int x;                                   // CUR SHOT CENTER X
     int y;                                   // CUR SHOT CENTER Y
+    int ox;                                  // prev-frame x (interpolation)
+    int oy;                                  // prev-frame y (interpolation)
     MOVEOBJ move;                            // MOVE STUFF
     int doneflag;                            // SHOT DONE = TRUE
     ESHOT_LIB *lib;                          // POINTER TO LIB

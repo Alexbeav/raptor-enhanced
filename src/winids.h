@@ -82,6 +82,7 @@
 #define COMP_B3 0x0009       // BUTTON FIELD
 #define COMP_GAME3 0x000a    // BUTTON FIELD
 #define COMP_AUTO 0x000b     // BUTTON FIELD
+#define COMP_GAME4 0x000c    // BUTTON FIELD ( Delta Sector, community add-on )
 
 // LOADCOMP defines
 

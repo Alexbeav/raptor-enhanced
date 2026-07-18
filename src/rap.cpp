@@ -86,6 +86,7 @@ int cur_game;
 int game_wave[4];
 
 int gameflag[4];
+int sector4_installed;          // Delta Sector present (MAP1G4_MAP exists)
 int curship[16];
 int lship[8];
 int dship[8];
@@ -105,6 +106,8 @@ int end_fadeflag;
 int debugflag;
 int playerx = PLAYERINITX;
 int playery = PLAYERINITY;
+int o_playerx = PLAYERINITX;
+int o_playery = PLAYERINITY;
 int player_cx = PLAYERINITX;
 int player_cy = PLAYERINITY;
 int playerbasepic = 3;
@@ -871,7 +874,10 @@ Do_Game(
     do
     {
         num_shadows = num_gshadows = 0;
-        
+
+        o_playerx = playerx;         // snapshot player for interpolation
+        o_playery = playery;
+
         #ifdef __ANDROID__
         if (!I_GetNeedResize(true))
             IPT_MovePlayer();
@@ -1045,7 +1051,8 @@ Do_Game(
         }
         
         gl_cnt++;
-        
+
+        ENEMY_SavePrev();            // snapshot enemy positions for interpolation
         TILE_Think();
         ENEMY_Think();
         ESHOT_Think();
@@ -1053,71 +1060,101 @@ Do_Game(
         SHOTS_Think();
         ANIMS_Think();
         OBJS_Think();
-        
-        if (draw_player)
-            SHADOW_Add(curship[playerpic + g_flash], playerx, playery);
-        
-        TILE_Display();
-        SHADOW_DisplayGround();
-        ENEMY_DisplayGround();
-        SHADOW_DisplaySky();
-        ANIMS_DisplayGround();
-        
-        ENEMY_DisplaySky();
-        SHOTS_Display();
-        BONUS_Display();
-        ANIMS_DisplaySky();
-        
-        if (draw_player)
+
+        // Draw + present the frame N times per logic step, interpolating moving
+        // objects between their previous and current positions. Logic still
+        // advances once per 3 ticks (game speed unchanged); only presentation
+        // is finer. steps==1 reproduces the original single-present behaviour.
         {
-            FLAME_Down(player_cx - o_engine[playerpic] - 3, player_cy + 15, 4, gl_cnt % 2);
-            FLAME_Down(player_cx + o_engine[playerpic] - 2, player_cy + 15, 4, gl_cnt % 2);
-            GFX_PutSprite((char*)GLB_GetItem(curship[playerpic + g_flash]), playerx, playery);
-            g_flash = 0;
-        }
-        
-        ANIMS_DisplayHigh();
-        ESHOT_Display();
-        
-        if (fadeflag)
-        {
-            if (fadecnt >= FADE_FRAMES - 1)
+            int steps = g_smooth ? 3 : 1;
+            int sub;
+
+            for (sub = 1; sub <= steps; sub++)
             {
-                RAP_ClearSides();
-                g_mapleft = MAP_LEFT;
-                GFX_SetPalette(gpal, 0);
-                fadeflag = 0;
-                g_oldsuper = -1;
-                g_oldshield = -1;
+                int ipx, ipy, ipcx, ipcy;
+
+                g_lerp_num = sub;
+                g_lerp_den = steps;
+                g_commit = (sub == steps);
+
+                ipx = GFX_Lerp(playerx, o_playerx);       // interpolated player draw pos
+                ipy = GFX_Lerp(playery, o_playery);
+                ipcx = ipx + (PLAYERWIDTH / 2);
+                ipcy = ipy + (PLAYERHEIGHT / 2);
+
+                num_shadows = num_gshadows = 0;
+
+                if (draw_player)
+                    SHADOW_Add(curship[playerpic + g_flash], ipx, ipy);
+                ENEMY_AddShadows();
+
+                TILE_Display();
+                SHADOW_DisplayGround();
+                ENEMY_DisplayGround();
+                SHADOW_DisplaySky();
+                ANIMS_DisplayGround();
+
+                ENEMY_DisplaySky();
+                SHOTS_Display();
+                BONUS_Display();
+                ANIMS_DisplaySky();
+
+                if (draw_player)
+                {
+                    FLAME_Down(ipcx - o_engine[playerpic] - 3, ipcy + 15, 4, gl_cnt % 2);
+                    FLAME_Down(ipcx + o_engine[playerpic] - 2, ipcy + 15, 4, gl_cnt % 2);
+                    GFX_PutSprite((char*)GLB_GetItem(curship[playerpic + g_flash]), ipx, ipy);
+                    if (g_commit)
+                        g_flash = 0;
+                }
+
+                ANIMS_DisplayHigh();
+                ESHOT_Display();
+
+                if (g_commit)
+                {
+                    if (fadeflag)
+                    {
+                        if (fadecnt >= FADE_FRAMES - 1)
+                        {
+                            RAP_ClearSides();
+                            g_mapleft = MAP_LEFT;
+                            GFX_SetPalette(gpal, 0);
+                            fadeflag = 0;
+                            g_oldsuper = -1;
+                            g_oldshield = -1;
+                        }
+                        else
+                        {
+                            RAP_ClearSides();
+                            retraceflag = 0;
+                            GFX_FadeFrame(gpal, fadecnt, FADE_FRAMES);
+                            retraceflag = 0;
+                            g_mapleft = shakes[fadecnt] + MAP_LEFT;
+                            fadecnt++;
+                        }
+                    }
+                    else
+                    {
+                        if (!init_flag)
+                            RAP_PaletteStuff();
+                    }
+                }
+
+                RAP_DisplayStats();
+
+                while (GFX_GetFrameCount() - local_cnt < (3 * sub) / steps)
+                {
+                }
+
+                if (fadeflag)
+                    TILE_ShakeScreen();
+                else
+                    TILE_DisplayScreen();
             }
-            else
-            {
-                RAP_ClearSides();
-                retraceflag = 0;
-                GFX_FadeFrame(gpal, fadecnt, FADE_FRAMES);
-                retraceflag = 0;
-                g_mapleft = shakes[fadecnt] + MAP_LEFT;
-                fadecnt++;
-            }
         }
-        else
-        {
-            if (!init_flag)
-                RAP_PaletteStuff();
-        }
-        
-        RAP_DisplayStats();
-        
-        while (GFX_GetFrameCount() - local_cnt < 3)
-        {
-        }
-        
+
         local_cnt = GFX_GetFrameCount();
-        
-        if (fadeflag)
-            TILE_ShakeScreen();
-        else
-            TILE_DisplayScreen();
         
         if (startfadeflag)
         {
@@ -1508,6 +1545,9 @@ main(
         }
     }
     
+    // = DETECT DELTA SECTOR ( 4th campaign, community add-on ) ============
+    sector4_installed = (GLB_GetItemID("MAP1G4_MAP") != -1);
+
     // = LOAD IN FLAT LIBS  =========================
     for (loop = 0; loop < 4; loop++)
     {

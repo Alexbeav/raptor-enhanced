@@ -77,6 +77,8 @@ typedef struct SPRITE_SHIP_S
     int sy;                           // START Y
     int x;                            // CENTER X POS;
     int y;                            // Y POS
+    int ox;                           // previous-frame x (motion interpolation)
+    int oy;                           // previous-frame y (motion interpolation)
     int x2;                           // WIDTH
     int y2;                           // HEIGHT           
     int width;                        // WIDTH
@@ -137,5 +139,7 @@ int ENEMY_DamageGround(int x, int y, int damage);
 int ENEMY_DamageAir(int x, int y, int damage);
 int ENEMY_GetBaseDamage(void);
 void ENEMY_Think(void);
+void ENEMY_SavePrev(void);
+void ENEMY_AddShadows(void);
 void ENEMY_DisplayGround(void);
 void ENEMY_DisplaySky(void);

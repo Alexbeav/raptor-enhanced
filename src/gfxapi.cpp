@@ -36,6 +36,10 @@ static int timer_init = 0;
 int retraceflag = 1;
 int fontspacing = 1;
 
+int g_smooth = 0;                 // smooth-motion interpolation (INI: smooth_motion, default off)
+int g_lerp_num = 1, g_lerp_den = 1;
+int g_commit = 1;
+
 int G3D_x;                        // input: x position
 int G3D_y;                        // input: y position
 int G3D_z;                        // input: z position

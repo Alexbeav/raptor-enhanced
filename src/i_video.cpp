@@ -38,6 +38,7 @@
 #include "musapi.h"
 #include "prefapi.h"
 #include "joyapi.h"
+#include "gfxapi.h"
 
 // These are (1) the window (or the full screen) that our game is rendered to
 // and (2) the renderer that scales the texture (see below) into this window.
@@ -60,6 +61,11 @@ static SDL_Surface *screenbuffer = NULL;
 static SDL_Surface *argbbuffer = NULL;
 static SDL_Texture *texture = NULL;
 static SDL_Texture *texture_upscaled = NULL;
+
+// Widescreen cockpit bezel: art drawn in the pillar area beside the 4:3 game.
+#include "bezel_art.h"
+static SDL_Texture *bezel_texture = NULL;
+int widescreen_bezel = 0;
 
 static SDL_Rect blit_rect = {
     0,
@@ -208,6 +214,43 @@ void VIDEO_LoadPrefs(void)
     fullscreen = INI_GetPreferenceLong("Video", "fullscreen", 0);
     aspect_ratio_correct = INI_GetPreferenceLong("Video", "aspect_ratio_correct", 1);
     txt_fullscreen = INI_GetPreferenceLong("Video", "txt_fullscreen", 0);
+    // both default OFF and are deliberately not written to SETUP.INI: the
+    // enhancements stay dormant until a later patch documents the keys
+    widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
+    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 0);
+}
+
+// Decode the embedded RLE cockpit bezel into a static texture (once).
+static void I_InitBezel(void)
+{
+    if (bezel_texture != NULL)
+    {
+        SDL_DestroyTexture(bezel_texture);
+        bezel_texture = NULL;
+    }
+
+    Uint32 *rgba = (Uint32 *)malloc(BEZEL_W * BEZEL_H * sizeof(Uint32));
+    if (!rgba)
+        return;
+
+    int px = 0;
+    for (int i = 0; i + 5 < BEZEL_RLE_LEN; i += 6)
+    {
+        int count = BEZEL_RLE[i] | (BEZEL_RLE[i + 1] << 8);
+        Uint32 c = (Uint32)BEZEL_RLE[i + 2]            // R (low byte -> ABGR8888)
+                 | ((Uint32)BEZEL_RLE[i + 3] << 8)     // G
+                 | ((Uint32)BEZEL_RLE[i + 4] << 16)    // B
+                 | ((Uint32)BEZEL_RLE[i + 5] << 24);   // A
+        while (count-- > 0 && px < BEZEL_W * BEZEL_H)
+            rgba[px++] = c;
+    }
+
+    bezel_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888,
+                                      SDL_TEXTUREACCESS_STATIC, BEZEL_W, BEZEL_H);
+    if (bezel_texture)
+        SDL_UpdateTexture(bezel_texture, NULL, rgba, BEZEL_W * sizeof(Uint32));
+
+    free(rgba);
 }
 
 static bool MouseShouldBeGrabbed()
@@ -826,6 +869,17 @@ void I_FinishUpdate (void)
     // Finally, render this upscaled texture to screen using linear scaling.
 
     SDL_SetRenderTarget(renderer, NULL);
+
+    // Widescreen cockpit bezel: fill the whole window (logical size off, so we
+    // reach the pillar bars) before the game is composited on top. Input
+    // mapping is unaffected because logical size is restored immediately.
+    if (widescreen_bezel && bezel_texture)
+    {
+        SDL_RenderSetLogicalSize(renderer, 0, 0);
+        SDL_RenderCopy(renderer, bezel_texture, NULL, NULL);
+        SDL_RenderSetLogicalSize(renderer, SCREENWIDTH, actualheight);
+    }
+
     SDL_RenderCopy(renderer, texture_upscaled, NULL, NULL);
 
     // Draw!
@@ -1407,6 +1461,9 @@ static void SetVideoMode(void)
     // Initially create the upscaled texture for rendering to screen
 
     CreateUpscaledTexture(true);
+
+    // Build the widescreen cockpit bezel texture for this renderer.
+    I_InitBezel();
 }
 
 void I_InitGraphics(uint8_t *pal)

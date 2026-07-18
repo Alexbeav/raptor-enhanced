@@ -56,6 +56,8 @@ typedef struct SHOTS_S
     char *pic;                              // pointer to cur frame pic
     int x;                                  // cur shot center x
     int y;                                  // cur shot center y
+    int ox;                                 // prev-frame x (interpolation)
+    int oy;                                 // prev-frame y (interpolation)
     MOVEOBJ move;                           // MOVE stuff
     int speed;                              // cur speed
     int curframe;                           // current anim frame

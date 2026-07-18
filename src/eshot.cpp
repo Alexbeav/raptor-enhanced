@@ -371,7 +371,12 @@ ESHOT_Shoot(
         
         InitMobj(&cur->move);
         MoveSobj(&cur->move, 1);
-        
+
+        cur->x = cur->move.x;        // valid spawn position (no interpolation streak)
+        cur->y = cur->move.y;
+        cur->ox = cur->x;
+        cur->oy = cur->y;
+
         if (cur->move.x < 0 || cur->move.x >= 320)
             cur->move.done = 1;
         
@@ -397,10 +402,13 @@ ESHOT_Think(
 
     for (shot = first_eshot.next; shot!=&last_eshot; shot = shot->next)
     {
+        shot->ox = shot->x;          // snapshot for interpolation
+        shot->oy = shot->y;
+
         lib = shot->lib;
-        
+
         shot->pic = lib->pic[shot->curframe];
-        
+
         shot->curframe++;
         
         switch (shot->type)
@@ -534,6 +542,6 @@ ESHOT_Display(
             }
         }
         else
-            GFX_PutSprite(shot->pic, shot->x, shot->y);
+            GFX_PutSprite(shot->pic, GFX_Lerp(shot->x, shot->ox), GFX_Lerp(shot->y, shot->oy));
     }
 }

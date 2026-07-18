@@ -349,7 +349,13 @@ ANIMS_Think(
         }
         
         cur->item = lib->item + cur->curframe;
-        
+
+        if (cur->spawned)                          // snapshot prev draw pos
+        {
+            cur->odx = cur->dx;
+            cur->ody = cur->dy;
+        }
+
         if (lib->playerflag)
         {
             cur->dx = player_cx + cur->x;
@@ -359,7 +365,7 @@ ANIMS_Think(
         {
             if (cur->en->item == -1)
                 cur->edone = 1;
-            
+
             if (!cur->edone)
             {
                 cur->dx = cur->en->move.x + cur->x;
@@ -371,7 +377,14 @@ ANIMS_Think(
             cur->dx = cur->x;
             cur->dy = cur->y;
         }
-        
+
+        if (!cur->spawned)                         // first frame: no interpolation
+        {
+            cur->odx = cur->dx;
+            cur->ody = cur->dy;
+            cur->spawned = 1;
+        }
+
         switch (lib->adir)
         {
         case 0:
@@ -412,9 +425,9 @@ ANIMS_DisplayGround(
         pic = (char*)GLB_GetItem(cur->item);
         
         if (cur->lib->transparent)
-            GFX_ShadeShape(LIGHT, pic, cur->dx, cur->dy);
+            GFX_ShadeShape(LIGHT, pic, GFX_Lerp(cur->dx, cur->odx), GFX_Lerp(cur->dy, cur->ody));
         else
-            GFX_PutSprite(pic, cur->dx, cur->dy);
+            GFX_PutSprite(pic, GFX_Lerp(cur->dx, cur->odx), GFX_Lerp(cur->dy, cur->ody));
     }
 }
 
@@ -437,10 +450,10 @@ ANIMS_DisplaySky(
         pic = (char*)GLB_GetItem(cur->item);
         
         if (cur->lib->transparent)
-            GFX_ShadeShape(LIGHT, pic, cur->dx, cur->dy);
+            GFX_ShadeShape(LIGHT, pic, GFX_Lerp(cur->dx, cur->odx), GFX_Lerp(cur->dy, cur->ody));
         
         else
-            GFX_PutSprite(pic, cur->dx, cur->dy);
+            GFX_PutSprite(pic, GFX_Lerp(cur->dx, cur->odx), GFX_Lerp(cur->dy, cur->ody));
     }
 }
 
@@ -463,8 +476,8 @@ ANIMS_DisplayHigh(
         pic = (char*)GLB_GetItem(cur->item);
         
         if (cur->lib->transparent)
-            GFX_ShadeShape(LIGHT, pic, cur->dx, cur->dy);
+            GFX_ShadeShape(LIGHT, pic, GFX_Lerp(cur->dx, cur->odx), GFX_Lerp(cur->dy, cur->ody));
         else
-            GFX_PutSprite(pic, cur->dx, cur->dy);
+            GFX_PutSprite(pic, GFX_Lerp(cur->dx, cur->odx), GFX_Lerp(cur->dy, cur->ody));
     }
 }

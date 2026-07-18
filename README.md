@@ -1,3 +1,23 @@
+# Raptor Enhanced
+
+A fork of the open-source Raptor engine port ([skynettx/raptor](https://github.com/skynettx/raptor),
+based on the reverse-engineered codebase by nukeykt), extended with:
+
+- **Delta Sector** — engine support for an optional community-made 4th campaign
+  (9 new waves). The campaign data is installed into your own copies of the
+  game files by the separately distributed installer; the engine detects its
+  presence at startup and otherwise behaves like the stock port.
+- **Smooth-motion interpolation** — optional ~70fps presentation while game
+  logic runs at its original speed (`smooth_motion=1` under `[Video]` in
+  SETUP.INI; default off).
+- **Widescreen cockpit bezel** — optional fan-drawn cockpit side panels in
+  fullscreen on widescreen displays (`widescreen_bezel=1`; default off).
+
+No game data or game code by Scott Host is included. GPL-2, like the port it
+is based on. Upstream README follows.
+
+---
+
 # Raptor
 Based on the reverse-engineered codebase from Raptor Call Of The Shadows by nukeykt
 

@@ -21,6 +21,8 @@ typedef struct BONUS_S
     int by;                           // BONUS Y POSITION
     int gx;                           // GLOW X POSITION
     int gy;                           // GLOW Y POSITION
+    int obx, oby, ogx, ogy;           // prev draw positions (interpolation)
+    int spawned;                      // false until first draw pos computed
     int pos;                          // POS IN CIRCLE
     int dflag;                        // DONEFLAG
     int countdown;                    // COUNTDOWN TO REMOVE
