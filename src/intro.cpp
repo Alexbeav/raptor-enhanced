@@ -687,20 +687,23 @@ INTRO_EndGame(
     int game
 )
 {
+    int anim;
+
     IMS_StartAck();
-    
+
     if (!gameflag[game])
         return;
-    
-    if (game > 2)
-        game = 2;
-    
+
+    anim = game;
+    if (anim > 2)
+        anim = 2;                // Delta Sector reuses the sector-3 cinematics
+
     while (IMS_IsAck())
     {
     }
     IMS_StartAck();
-    
-    switch (game)
+
+    switch (anim)
     {
     default:
     case 0:
@@ -732,8 +735,8 @@ INTRO_EndGame(
     {
     }
     IMS_StartAck();
-    WIN_WinGame(game);
-    
+    WIN_WinGame(game == 3 ? 4 : game);   // 4 = Delta ending text (END4_TXT)
+
     if (game < 1)
         WIN_Order();
 }

@@ -96,6 +96,20 @@ int songsg3[] = {
     FILE05e_RAP6_MUS        // WAVE 9
 };
 
+// Delta Sector: each wave's song follows the campaign its middle terrain
+// band was spliced from (see the Delta installer's recipes)
+int songsg4[] = {
+    FILE05b_RAP3_MUS,       // WAVE 1
+    FILE05c_RAP4_MUS,       // WAVE 2
+    FILE05c_RAP4_MUS,       // WAVE 3
+    FILE05f_RAP7_MUS,       // WAVE 4
+    FILE05e_RAP6_MUS,       // WAVE 5
+    FILE05a_RAP2_MUS,       // WAVE 6
+    FILE060_RAP8_MUS,       // WAVE 7
+    FILE059_RAP1_MUS,       // WAVE 8
+    FILE05e_RAP6_MUS        // WAVE 9
+};
+
 #define HANGTOSTORE    0
 #define HANGTOMISSION  1
 
@@ -113,20 +127,30 @@ WIN_WinGame(
 )
 {
     int window;
+    int text_item;
     int dtext[4] = {
-        FILE00a_END1_TXT, 
+        FILE00a_END1_TXT,
         FILE00b_END2_TXT,
         FILE00c_END3_TXT,
         FILE009_END0_TXT
     };
-    
-    if (game > 3)
+
+    if (game > 4)
         return;
 
+    if (game == 4)                                   // Delta Sector completion
+    {
+        text_item = GLB_GetItemID("END4_TXT");       // installed with the campaign
+        if (text_item == -1)
+            text_item = dtext[2];                    // older Delta data: sector-3 text
+    }
+    else
+        text_item = dtext[game];
+
     GFX_FadeOut(0, 0, 0, 2);
-    
+
     window = SWD_InitWindow(FILE13e_WINGAME_SWD);
-    SWD_SetFieldItem(window, WIN_TEXT, dtext[game]);
+    SWD_SetFieldItem(window, WIN_TEXT, text_item);
     SWD_ShowAllWindows();
     GFX_DisplayUpdate();
     GFX_FadeIn(palette, 16);
@@ -1856,8 +1880,8 @@ WIN_MainLoop(
         case 2:
             SND_PlaySong(songsg3[game_wave[cur_game]], 1, 1);
             break;
-        case 3:                                     // Delta Sector reuses Outer Regions music
-            SND_PlaySong(songsg3[game_wave[cur_game]], 1, 1);
+        case 3:                                     // Delta Sector
+            SND_PlaySong(songsg4[game_wave[cur_game]], 1, 1);
             break;
         }
         

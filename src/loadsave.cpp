@@ -572,6 +572,24 @@ RAP_LoadPlayer(
     game_wave[0] = plr.game_wave[0];
     game_wave[1] = plr.game_wave[1];
     game_wave[2] = plr.game_wave[2];
+
+    // Delta Sector wave progress lives in a sidecar file: the versionless
+    // pilot format cannot grow without corrupting every existing save.
+    game_wave[3] = 0;
+    if (sector4_installed)
+    {
+        char s4name[PATH_MAX + 8];
+        FILE *s4;
+        sprintf(s4name, "%s.SG4", filename);
+        s4 = fopen(s4name, "rb");
+        if (s4)
+        {
+            if (fread(&game_wave[3], sizeof(int), 1, s4) != 1
+                || game_wave[3] < 0 || game_wave[3] > 8)
+                game_wave[3] = 0;
+            fclose(s4);
+        }
+    }
     
     if (!OBJS_IsEquip(plr.sweapon))
         OBJS_GetNext();
@@ -663,11 +681,26 @@ RAP_SavePlayer(
     fwrite(savebuffer, 1, size, handle);
 
     rval = 1;
-    
+
     fclose(handle);
     free(savebuffer);
     SaveResetReadWritePosition();
-    
+
+    // Delta Sector wave progress sidecar (see RAP_LoadPlayer). Always
+    // rewritten so a reused pilot slot never inherits a stale wave.
+    if (sector4_installed)
+    {
+        char s4name[PATH_MAX + 8];
+        FILE *s4;
+        sprintf(s4name, "%s.SG4", filename);
+        s4 = fopen(s4name, "wb");
+        if (s4)
+        {
+            fwrite(&game_wave[3], sizeof(int), 1, s4);
+            fclose(s4);
+        }
+    }
+
     return rval;
 }
 
@@ -913,6 +946,9 @@ RAP_LoadWin(
                 sprintf(temp, "Delete Pilot %s ?", tplr.callsign);
                 if (WIN_AskBool(temp))
                 {
+                    char s4name[PATH_MAX + 8];
+                    sprintf(s4name, "%s.SG4", filenames[pos]);
+                    remove(s4name);                  // Delta wave sidecar, if any
                     remove(filenames[pos]);
                     WIN_Msg("Pilot Removed !");
                     filenames[pos][0] = 0;
