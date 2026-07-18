@@ -1,0 +1,20 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows-x64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - name: Build Release x64
+        run: msbuild msvc/raptor.sln /m /v:minimal /p:Configuration=Release /p:Platform=x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: raptor-enhanced-x64
+          path: |
+            msvc/x64/Release/raptor.exe
+            msvc/x64/Release/raptorsetup/raptorsetup.exe
