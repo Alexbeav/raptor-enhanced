@@ -10,6 +10,11 @@ presence at startup and otherwise behaves like the stock port.
 No game data or game code by Scott Host is included. GPL-2, like the port it
 is based on. Upstream README follows.
 
+Companion project: the [Raptor Map Editor](https://github.com/Alexbeav/raptor-map-editor)
+edits levels, enemies, artwork, and music, and can install Delta Sector from
+the browser. The development history of both projects is chronicled in its
+[DEVLOG](https://github.com/Alexbeav/raptor-map-editor/blob/main/DEVLOG.md).
+
 ---
 
 # Raptor
