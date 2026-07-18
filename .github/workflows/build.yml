@@ -13,8 +13,11 @@ jobs:
       - name: Build Release x64
         run: msbuild msvc/raptor.sln /m /v:minimal /p:Configuration=Release /p:Platform=x64
       - name: Verify CMake Release build
+        # CMAKE_POLICY_VERSION_MINIMUM: the vendored SDL2 config declares
+        # cmake_minimum_required 3.0, which CMake 4.x (on current runners)
+        # refuses without this compatibility floor.
         run: |
-          cmake -S . -B build -A x64
+          cmake -S . -B build -A x64 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           cmake --build build --config Release --parallel
       - uses: actions/upload-artifact@v4
         with:
