@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <string.h>
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#else
 #include "SDL.h"
+#endif
 #include "common.h"
 #include "glbapi.h"
 #include "i_video.h"
@@ -21,7 +25,13 @@ int fx_device;
 int fx_volume;
 static int fx_init = 0;
 static int lockcount;
+#ifdef __3DS__
+int fx_freq = 22050;
+#elif __SWITCH__
+int fx_freq = 22050;
+#else
 int fx_freq = 44100;
+#endif
 int music_song = -1;
 int fx_gus;
 int fx_channels;
@@ -119,7 +129,11 @@ SND_InitSound(
     fx_device = SND_NONE;
 
     music_volume = INI_GetPreferenceLong("Music", "Volume", 127);
+    #if defined (__3DS__) || defined (__SWITCH__) || defined (XBOX)
+    music_card = M_SB;
+    #else
     music_card = INI_GetPreferenceLong("Music", "CardType", M_NONE);
+    #endif
     sys_midi = INI_GetPreferenceLong("Setup", "sys_midi", 0);
     winmm_mpu_device = INI_GetPreferenceLong("Setup", "winmm_mpu_device", 0);
     core_dls_synth = INI_GetPreferenceLong("Setup", "core_dls_synth", 1);
@@ -150,8 +164,13 @@ SND_InitSound(
     }
 
     fx_volume = INI_GetPreferenceLong("SoundFX", "Volume", 127);
-    fx_card = INI_GetPreferenceLong("SoundFX", "CardType", 0);
-    fx_chans = INI_GetPreferenceLong("SoundFX", "Channels", 2);
+    #if defined (__NDS__) || defined (__3DS__) || defined (__SWITCH__) || defined (XBOX)
+        fx_card = 5;
+        fx_chans = 2;
+    #else
+        fx_card = INI_GetPreferenceLong("SoundFX", "CardType", 0);
+        fx_chans = INI_GetPreferenceLong("SoundFX", "Channels", 2);
+    #endif
     
     switch (fx_card)
     {
@@ -1045,10 +1064,12 @@ SND_PlaySong(
         
         if (fadeflag)
         {
-            while (MUS_SongPlaying())
+            #ifndef XBOX
+            while (MUS_SongPlaying()) //Fixme
             {
                 I_GetEvent();
             }
+            #endif
         }
         
         GLB_UnlockItem(music_song);
@@ -1071,7 +1092,11 @@ SND_IsSongPlaying(
     void
 ) 
 {
+    #ifdef XBOX
+    return 0; //Fixme
+    #else
     return MUS_SongPlaying();
+    #endif
 }
 
 /***************************************************************************

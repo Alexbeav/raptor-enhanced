@@ -10,10 +10,10 @@
 #include "vmemapi.h"
 #include "entypes.h"
 
-#ifdef _WIN32
+#if defined (_WIN32) && !defined (XBOX)
 #include <io.h>
 #endif // _WIN32
-#ifdef __GNUC__
+#if defined (__GNUC__) || defined (XBOX)
 #include <unistd.h>
 char* strupr(char* s)
 {
@@ -184,27 +184,65 @@ GLB_FindFile(
 	* fails use the exe path and try again.
 	*/
 	sprintf(filenamelc, "%s%04u.glb", "file", filenum);
+	
+	#if defined(__3DS__) || defined(__SWITCH__) || defined(XBOX)
+	if (!checkFile(filenamelc, 0))
+		strcpy(filename, filenamelc);
+	else
+		sprintf(filename, "%s%04u.GLB", prefix, filenum);
+	#else
 	if (!access(filenamelc, 0))
 		strcpy(filename, filenamelc);
 	else
 		sprintf(filename, "%s%04u.GLB", prefix, filenum);
-	
+	#endif
+
 	if ((handle = fopen(filename, permissions)) == NULL)
 	{
 		sprintf(filenamelc, "%s%s%04u.glb", exePath, "file", filenum);
-		if (!access(filenamelc, 0))
-			strcpy(filename, filenamelc);
-		else
-			sprintf(filename, "%s%s%04u.GLB", exePath, prefix, filenum);
-		
-		if ((handle = fopen(filename, permissions)) == NULL)
-		{
-			if (return_on_failure)
-				return NULL;
+		if (handle == NULL)
+        {
+            #if defined (__3DS__) || defined (__SWITCH__)
+				sprintf(filename, "%s%s%04u.GLB", ROMFS, prefix, filenum);
+				handle = fopen(filename, permissions);
+				if (handle == NULL)
+				{
+					sprintf(filename, "%s%s%04u.GLB", RAP_SD_DIR, prefix, filenum);
+					handle = fopen(filename, permissions);
+					if (handle == NULL)
+					{
+						if (return_on_failure)
+							return NULL;
+						sprintf(filename, "%s%04u.GLB", prefix, filenum);
+						EXIT_Error("GLB_FindFile: %s, Error #%d,%s", filename, errno, strerror(errno));
+					}
+				}
+			#elif XBOX
+				sprintf(filenamelc, "%s%s%04u.GLB", XBOX_HDD_DIR, prefix, filenum);
+				handle = fopen(filename, permissions);
+				if ((handle = fopen(filename, permissions)) == NULL)
+				{
+					sprintf(filename, "%s%s%04u.GLB", XBOX_DVD_DIR, prefix, filenum);
+					handle = fopen(filename, permissions);
+					if (handle == NULL)
+					{
+						if (return_on_failure)
+							return NULL;
+						sprintf(filename, "%s%04u.GLB", prefix, filenum);
+						EXIT_Error("GLB_FindFile: %s, Error #%d,%s", filename, errno, strerror(errno));
+					}
+				}
+            #else
+			if ((handle = fopen(filename, permissions)) == NULL)
+			{
+				if (return_on_failure)
+					return NULL;
 
-			sprintf(filename, "%s%04u.GLB", prefix, filenum);
-			EXIT_Error("GLB_FindFile: %s, Error #%d,%s",
-				filename, errno, strerror(errno));
+				sprintf(filename, "%s%04u.GLB", prefix, filenum);
+				EXIT_Error("GLB_FindFile: %s, Error #%d,%s",
+					filename, errno, strerror(errno));
+				}
+			#endif
 		}
 	}
 	
@@ -365,7 +403,11 @@ GLB_UseVM(
 	void
 )
 {
+	#ifdef __ARM__
+	fVmem = 0;
+	#else
 	fVmem = 1;
+	#endif
 }
 
 /*************************************************************************

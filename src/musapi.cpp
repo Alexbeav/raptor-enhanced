@@ -1,4 +1,8 @@
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#else
 #include "SDL.h"
+#endif
 #include <stdint.h>
 #include "common.h"
 #include "musapi.h"
@@ -432,7 +436,7 @@ MUS_Init(
     default:
         if (sys_midi)
         {
-            #ifdef _WIN32
+            #if defined (_WIN32) && !defined (XBOX)
             music_device = &mus_device_winmm;
             #endif // _WIN32
 
@@ -582,7 +586,11 @@ MUS_SongPlaying(
     if (!music_init)
         return 0;
     
+    //#ifdef XBOX
+    //return 0; //Fixme
+    //#else
     return music_active;
+    //#endif
 }
 
 /***************************************************************************

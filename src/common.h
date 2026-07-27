@@ -5,8 +5,17 @@
 
 void LOG_Printf(const char *fmt, ...);
 
+#ifdef __ARM__
+#include "arm.h"
+#elif XBOX
+#include "xbox.h"
+#endif
+
 static inline void EXIT_Error(const char *a1, ...)
 {
+	#if defined(__ARM__) || defined(XBOX)
+	exit(0);
+	#else
     char msg[1024];
     va_list args;
 
@@ -17,6 +26,7 @@ static inline void EXIT_Error(const char *a1, ...)
     LOG_Printf("FATAL: %s", msg);
     fprintf(stderr, "FATAL: %s\n", msg);
     exit(1);
+    #endif
 }
 
 static inline void EXIT_Clean(void)

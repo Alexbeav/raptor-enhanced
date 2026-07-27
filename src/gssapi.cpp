@@ -1,4 +1,8 @@
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#else
 #include "SDL.h"
+#endif
 #include "common.h"
 #include "gssapi.h"
 #include "musapi.h"
@@ -54,7 +58,7 @@ GSS_Init(
     case M_GMIDI:
     default:
 
-        #ifdef _WIN32
+        #if defined (_WIN32) && !defined (XBOX)
         gss_device = &mus_device_winmm;
         #endif // _WIN32
         break;

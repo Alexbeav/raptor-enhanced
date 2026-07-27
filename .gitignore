@@ -12,3 +12,4 @@ msvc/raptor
 msvc/.vs
 build-linux/
 linux-smoketest.sh
+*.bak

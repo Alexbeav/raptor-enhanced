@@ -2,7 +2,11 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#else
 #include "SDL.h"
+#endif
 #include "common.h"
 #include "glbapi.h"
 #include "i_video.h"
@@ -35,7 +39,7 @@
 #include "fileids.h"
 #include "entypes.h"
 
-#ifdef _WIN32
+#if defined (_WIN32) && !defined (XBOX)
 #include <io.h>
 #endif // _WIN32
 #ifdef __GNUC__
@@ -196,6 +200,12 @@ char flatnames[4][14] = {
 
 FLATS *flatlib[4];
 
+#ifdef __3DS__
+const char *ctrRegAttention[] = {"**************************************************\n                   ATTENTION! \n This version of RAPTOR is a COMMERCIAL VERSION. \n         DO NOT upload this to any bulletin \n       boards or distribute it in any fashion. \n     Please report software piracy to the S.P.A \n         hotline by calling 1-800-388-PIR8.\n\n**************************************************"};
+#elif XBOX
+const char *xboxRegAttention[] = {"***************************************************************                         ATTENTION!\n       This version of RAPTOR is a COMMERCIAL VERSION.\n DO NOT upload this to any bulletin boards or distribute it in\nany fashion. Please report software piracy to the S.P.A hotline                  by calling 1-800-388-PIR8.\n***************************************************************"};
+#endif
+
 /***************************************************************************
 RAP_Bday() - Get system date
  ***************************************************************************/
@@ -234,7 +244,18 @@ InitScreen(
     void
 )
 {
+   #ifdef __3DS__
+    printf(" RAPTOR: Call Of The Shadows V1.2\n (c)1994 Cygnus Studios\n");
+    printf(" RAPTOR-3DS-Enhanced: V0.9.2 by RetroGamer02\n");
+    #elif __SWITCH__
     printf(" RAPTOR: Call Of The Shadows V1.2                        (c)1994 Cygnus Studios\n");
+    printf(" RAPTOR-Switch: V0.5.1 by RetroGamer02\n");
+    #elif XBOX
+    printf(" RAPTOR: Call Of The Shadows V1.2       (c)1994 Cygnus Studios\n");
+    printf(" RAPTOR-Xbox: V0.5.2 by RetroGamer02\n");
+    #else
+    printf(" RAPTOR: Call Of The Shadows V1.2                        (c)1994 Cygnus Studios\n");
+    #endif
 }
 
 /*==========================================================================
@@ -262,10 +283,18 @@ ShutDown(
         mem = GLB_GetItem(FILE001_LASTSCR1_TXT);     //Get ANSI Screen Shareware from GLB to char*
 
     closewindow();                                   //Close Main Window
+    #if !defined (XBOX) && !defined (__NDS__)
     I_LASTSCR(mem);                                  //Call to display ANSI Screen 
+    #endif
     GLB_FreeAll();
     IPT_CloJoy();                                    //Close Joystick
-    SWD_End();
+    #ifdef XBOX
+    nxUnmountDrive('E');
+    nxUnmountDrive('Z');
+    HalReturnToFirmware(HalRebootRoutine);
+    #else
+    SWD_End(); //Broken on real Xbox hardware
+    #endif
     SDL_Quit();
     
     free(g_highmem);
@@ -1341,6 +1370,10 @@ main(
 
     var1 = getenv("S_HOST");
 
+    #if defined (__ARM__) || defined (XBOX)
+    sys_init();
+    #endif
+
     InitScreen();
 
     RAP_InitLoadSave();
@@ -1352,6 +1385,24 @@ main(
         INI_InitPreference(RAP_SetupFilename());
         RAP_WriteDefaultSetup();
     }
+#elif __3DS__
+	if (access(RAP_SetupFilename(), 0))
+    {
+        printf("\n\n** You must run SETUP first! **\n");
+        cp(RAP_SD_DIR "SETUP.INI", ROMFS "SETUP.INI");
+    }
+#elif __SWITCH__
+	if (access(RAP_SetupFilename(), 0))
+    {
+        printf("\n\n** You must run SETUP first! **\n");
+        cp(RAP_SD_DIR "SETUP.INI", ROMFS "SETUP.INI");
+    }
+#elif XBOX
+    if (access(RAP_SetupFilename(), 0))
+    {
+        printf("\n\n** You must run SETUP first! **\n");
+        CopyFileA(XBOX_DVD_DIR "SETUP.INI", XBOX_HDD_DIR "SETUP.INI", NULL);
+    }
 #else
     if (access(RAP_SetupFilename(), 0))
     {
@@ -1360,7 +1411,7 @@ main(
             "Raptor", "** You must run SETUP first! **", NULL);
         exit(0);
     }
-#endif //_WIN32 || __linux__ || __APPLE__
+#endif
 
     godmode = 0;
 
@@ -1369,6 +1420,7 @@ main(
     else
         godmode = 0;
 
+    #ifndef __ARM__
     if (argv[1])
     {
         if (!strcmp(argv[1], "REC"))
@@ -1387,12 +1439,38 @@ main(
             }
         }
     }
+    #endif
 
     if (godmode)
         printf("GOD mode enabled\n");
     
     cur_diff = 0;
 
+    #if defined (__NDS__) || defined (__3DS__) || defined (__SWITCH__)
+        if (!access(ROMFS "FILE0001.GLB", 0))
+            gameflag[0] = 1;
+        
+        if (!access(RAP_SD_DIR "FILE0002.GLB", 0))
+            gameflag[1] = 1;
+        
+        if (!access(RAP_SD_DIR "FILE0003.GLB", 0) && !access(RAP_SD_DIR "FILE0004.GLB", 0))
+        {
+            gameflag[2] = 1;
+            gameflag[3] = 1;
+        }
+    #elif XBOX
+        if (!access(XBOX_DVD_DIR "FILE0001.GLB", 0))
+            gameflag[0] = 1;
+        
+        if (!access(XBOX_HDD_DIR "FILE0002.GLB", 0))
+            gameflag[1] = 1;
+        
+        if (!access(XBOX_HDD_DIR "FILE0003.GLB", 0) && !access(XBOX_HDD_DIR "FILE0004.GLB", 0))
+        {
+            gameflag[2] = 1;
+            gameflag[3] = 1;
+        }
+    #else
     if (!access("FILE0001.GLB", 0) ||
         !access("file0001.glb", 0) ||
         RAP_CheckFileInPath("FILE0001.GLB") ||
@@ -1417,6 +1495,7 @@ main(
         gameflag[2] = 1;
         gameflag[3] = 1;
     }
+    #endif
 
     if (gameflag[1] + gameflag[2])
         reg_flag = 1;
@@ -1429,6 +1508,23 @@ main(
             numfiles++;
     }
 
+    #if defined (__3DS__) || defined (__SWITCH__)
+        if (access(ROMFS "FILE0000.GLB", 0) || !numfiles)
+        {
+            printf("All game data files NOT FOUND cannot proceed !!\n");
+            //SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+            //    "Raptor", "All game data files NOT FOUND cannot proceed !!", NULL);
+            //exit(0);
+        }
+    #elif XBOX
+        if (access(XBOX_DVD_DIR "FILE0000.GLB", 0) || !numfiles)
+        {
+            printf("All game data files NOT FOUND cannot proceed !!\n");
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+                "Raptor", "All game data files NOT FOUND cannot proceed !!", NULL);
+            //exit(0);
+        }
+    #else
     if ((access("FILE0000.GLB", 0) && !RAP_CheckFileInPath("FILE0000.GLB")) &&
         (access("file0000.glb", 0) && !RAP_CheckFileInPath("file0000.glb")) ||
         !numfiles)
@@ -1438,6 +1534,7 @@ main(
             "Raptor", "All game data files NOT FOUND cannot proceed !!", NULL);
         exit(0);
     }
+    #endif
     
     printf("Init -\n");
     EXIT_Install(ShutDown);
@@ -1478,18 +1575,24 @@ main(
     bday[5].year = 1996;
     bday[5].name = "Paul R.";
 
+    #ifndef XBOX
     RAP_Bday();
+    #endif
 
     if (bday_num != -1)
         printf("Birthday() = %s\n", bday[bday_num].name);
 
     // ================================================
 
+	#if defined(__3DS__) || defined(__SWITCH__) || (XBOX)
+	INI_InitPreference(RAP_SetupFilename());
+	#else
     if (access(RAP_SetupFilename(), 0))
         EXIT_Error("You Must run SETUP.EXE First !!");
 
     if (!INI_InitPreference(RAP_SetupFilename()))
         EXIT_Error("SETUP Error");
+    #endif
 
     fflush(stdout);
     KBD_Install();
@@ -1534,23 +1637,40 @@ main(
     
 #if _WIN32 || __linux__ || __APPLE__
     GLB_InitSystem(RAP_GetPath(), 6, 0);
+#elif __ARM__
+	GLB_InitSystem("", 6, 0);
+#elif XBOX
+	GLB_InitSystem("", 6, 0);
 #else
     GLB_InitSystem(argv[0], 6, 0);
 #endif //_WIN32 || __linux__ || __APPLE__
     
     if (reg_flag)
     {
-        tptr = GLB_GetItem(FILE000_ATENTION_TXT);
-        printf("%s\n", tptr);
-        GLB_FreeItem(FILE000_ATENTION_TXT);
+        #ifdef __3DS__
+            printf("%s", ctrRegAttention[0]);
+        #elif XBOX
+            printf("%s", xboxRegAttention[0]);
+        #else
+            tptr = GLB_GetItem(FILE000_ATENTION_TXT);
+            printf("%s\n", tptr);
+            GLB_FreeItem(FILE000_ATENTION_TXT);
+        #endif
     }
     
     SND_InitSound();
     IPT_Init();
     GLB_FreeAll();
+    #ifndef __NDS__
     RAP_InitMem();
+    #endif
     
     printf("Loading Graphics\n");
+
+    #if defined (__3DS__)
+        sleep(5);
+        consoleClear();
+    #endif
     
     pal = GLB_LockItem(FILE100_PALETTE_DAT);
     memset(pal, 0, 3);

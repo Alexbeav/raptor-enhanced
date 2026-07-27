@@ -15,7 +15,11 @@ struct musdevice_t {
     void (*AllNotesOffEvent)(unsigned int chan, unsigned int param);
 };
 
+#ifdef XBOX
+extern musdevice_t mus_device_opl, mus_device_winmm, mus_device_alsa, mus_device_core;
+#else
 extern musdevice_t mus_device_opl, mus_device_winmm, mus_device_tsf, mus_device_alsa, mus_device_corea, mus_device_corem;
+#endif
 extern musdevice_t *music_device;
 
 

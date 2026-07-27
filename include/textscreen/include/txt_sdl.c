@@ -15,7 +15,11 @@
 // Text mode emulation in SDL
 //
 
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#else
 #include "SDL.h"
+#endif
 
 #include <ctype.h>
 #include <stdio.h>
@@ -117,6 +121,9 @@ static const SDL_Color ega_colors[] =
 
 static int Win32_UseLargeFont(void)
 {
+    #ifdef XBOX
+    return 0;
+    #else
     HDC hdc = GetDC(NULL);
     int dpix;
 
@@ -132,6 +139,7 @@ static int Win32_UseLargeFont(void)
     // then consider this an appropriate threshold for using the large font.
 
     return dpix >= 144;
+    #endif
 }
 
 #endif

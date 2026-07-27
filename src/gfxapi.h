@@ -43,6 +43,15 @@ typedef struct
     int height;             // heigth of pic
 }GFX_PIC;
 
+#if defined (__ARM__)
+typedef struct __attribute__((packed))
+{
+    int x;                  // X POS OF SEG
+    int y;                  // Y POS OF SEG
+    int offset;             // OFFSET FROM X, Y
+    int length;             // LENGTH OF LINE
+}GFX_SPRITE;
+#else
 typedef struct
 {
     int x;                  // X POS OF SEG
@@ -50,6 +59,7 @@ typedef struct
     int offset;             // OFFSET FROM X, Y
     int length;             // LENGTH OF LINE
 }GFX_SPRITE;
+#endif
 
 typedef struct
 {

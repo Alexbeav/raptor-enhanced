@@ -20,8 +20,15 @@
 #include <stdlib.h>
 #include <cstring>
 #include <climits>
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_opengl.h"
+#elif defined (__NDS__)
+#include "SDL.h"
+#else
 #include "SDL.h"
 #include "SDL_opengl.h"
+#endif
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -108,9 +115,19 @@ int video_display = 0;
 
 // Screen width and height, from configuration file.
 
+#ifdef __3DS__
+int window_width = 320;
+int window_height = 200;
+#elif __SWITCH__
+int window_width = 1280;
+int window_height = 720;
+#elif XBOX
+int window_width = 640;
+int window_height = 480;
+#else
 int window_width = 800;
 int window_height = 600;
-
+#endif
 // Fullscreen mode, 0x0 for SDL_WINDOW_FULLSCREEN_DESKTOP.
 
 int fullscreen_width = 0, fullscreen_height = 0;
@@ -142,7 +159,11 @@ int vga_porch_flash = false;
 // Force software rendering, for systems which lack effective hardware
 // acceleration
 
+#ifdef XBOX
+int force_software_renderer = true;
+#else
 int force_software_renderer = false;
+#endif
 
 // Time to wait for the screen to settle on startup before starting the
 // game (ms)
@@ -211,13 +232,27 @@ static bool textmode = false;
 
 void VIDEO_LoadPrefs(void)
 {
-    fullscreen = INI_GetPreferenceLong("Video", "fullscreen", 0);
-    aspect_ratio_correct = INI_GetPreferenceLong("Video", "aspect_ratio_correct", 1);
-    txt_fullscreen = INI_GetPreferenceLong("Video", "txt_fullscreen", 0);
-    // both default OFF and are deliberately not written to SETUP.INI: the
-    // enhancements stay dormant until a later patch documents the keys
-    widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
-    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 0);
+	#ifdef __3DS__
+        fullscreen = 1;
+        aspect_ratio_correct = 0;
+        txt_fullscreen = 1;
+        widescreen_bezel = 0;
+        g_smooth = 0;
+    #elif XBOX
+        fullscreen = 1;
+        aspect_ratio_correct = 0;
+        txt_fullscreen = 0;
+        widescreen_bezel = 0;
+        g_smooth = 0;
+    #else
+	    fullscreen = INI_GetPreferenceLong("Video", "fullscreen", 0);
+	    aspect_ratio_correct = INI_GetPreferenceLong("Video", "aspect_ratio_correct", 1);
+	    txt_fullscreen = INI_GetPreferenceLong("Video", "txt_fullscreen", 0);
+	    // both default OFF and are deliberately not written to SETUP.INI: the
+	    // enhancements stay dormant until a later patch documents the keys
+	    widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
+	    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 0);
+	#endif
 }
 
 // Decode the embedded RLE cockpit bezel into a static texture (once).
@@ -620,11 +655,16 @@ static void LimitTextureSize(int *w_upscale, int *h_upscale)
     orig_h = *h_upscale;
 
     // Query renderer and limit to maximum texture dimensions of hardware:
-    if (SDL_GetRendererInfo(renderer, &rinfo) != 0)
-    {
-        EXIT_Error("CreateUpscaledTexture: SDL_GetRendererInfo() call failed: %s",
-                SDL_GetError());
-    }
+    #if defined (XBOX)
+        rinfo.max_texture_width = 1920;
+        rinfo.max_texture_height = 1080;
+    #else
+        if (SDL_GetRendererInfo(renderer, &rinfo) != 0)
+        {
+            EXIT_Error("CreateUpscaledTexture: SDL_GetRendererInfo() call failed: %s",
+                    SDL_GetError());
+        }
+    #endif
 
     while (*w_upscale * SCREENWIDTH > rinfo.max_texture_width)
     {
@@ -1184,7 +1224,9 @@ static void SetSDLVideoDriver(void)
         char *env_string;
 
         env_string = M_StringJoin("SDL_VIDEODRIVER=", video_driver, NULL);
+        #ifndef XBOX
         putenv(env_string);
+        #endif
         free(env_string);
     }
 }
@@ -1255,7 +1297,11 @@ static void SetVideoMode(void)
 {
     int w, h;
     int x, y;
-    unsigned int rmask, gmask, bmask, amask;
+    #if defined (__3DS__)
+        long unsigned int rmask, gmask, bmask, amask;
+    #else
+        unsigned int rmask, gmask, bmask, amask;
+    #endif
     int bpp;
     int window_flags = 0, renderer_flags = 0;
     SDL_DisplayMode mode;
@@ -1486,7 +1532,9 @@ void I_InitGraphics(uint8_t *pal)
         sscanf(env, "0x%x", &winid);
         M_snprintf(winenv, sizeof(winenv), "SDL_WINDOWID=%u", winid);
 
+        #ifndef XBOX
         putenv(winenv);
+        #endif
     }
 
     SetSDLVideoDriver();

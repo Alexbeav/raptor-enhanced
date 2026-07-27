@@ -1,4 +1,8 @@
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#else
 #include "SDL.h"
+#endif
 #include "i_video.h"
 #include "joyapi.h"
 
@@ -135,6 +139,13 @@ GetJoyButtonMapping(
 		ControllerIndex < MAX_CONTROLLERS;
 		++ControllerIndex)
 	{
+		//NXDK Has SDL 2.0.10 but SDL_GameControllerTypeForIndex requires 2.0.12
+		#ifdef XBOX
+			AButtonconvert = 0;
+			BButtonconvert = 1;
+			XButtonconvert = 2;
+			YButtonconvert = 3;
+		#else
 		switch (SDL_GameControllerTypeForIndex(ControllerIndex))
 		{
 		case SDL_CONTROLLER_TYPE_PS3:
@@ -165,6 +176,7 @@ GetJoyButtonMapping(
 			}
 			break;
 		}
+		#endif
 	}
 }
 

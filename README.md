@@ -1,6 +1,6 @@
-# Raptor Enhanced
+# Raptor Enhanced Consoles
 
-A fork of the open-source Raptor engine port ([skynettx/raptor](https://github.com/skynettx/raptor),
+A fork of the Enhanced open-source Raptor engine port ([Alexbrev/raptor-enhanced](https://github.com/Alexbeav/raptor-enhanced),
 based on the reverse-engineered codebase by nukeykt), extended with engine
 support for **Delta Sector** — an optional community-made 4th campaign
 (9 new waves). The campaign data is installed into your own copies of the
@@ -34,6 +34,8 @@ sources build for Windows (MSVC) and Linux (GCC/SDL2/ALSA). The upstream
 build and configuration reference below is retained from that project.
 
 ---
+
+3DS-SDL2 Altered source: https://github.com/RetroGamer02/SDL/tree/release-2.30.x
 
 # Upstream Raptor documentation
 Based on the reverse-engineered codebase from Raptor Call Of The Shadows by nukeykt
@@ -79,6 +81,9 @@ FILE0002.GLB
 FILE0003.GLB  
 FILE0004.GLB  
 ```
+
+3DS Builds also require a [DSP Dump](https://www.gamebrew.org/wiki/DSP_Firmware_Dumper_3DS) in order to get audio.
+
 ### Configuration
 If no `SETUP.INI` file exists in the target directory, a default file will be created automatically on Windows, Linux, macOS and Android.
 Furthermore, Raptor Setup can be used to create or edit the `SETUP.INI` (not available on Android), or edit it manually as follows.
@@ -159,6 +164,7 @@ The video settings can be set in the config file `SETUP.INI`. To toggle fullscre
 to `fullscreen=1`. Or aspect ratio mode off `aspect_ratio_correct=1` to `aspect_ratio_correct=0`. 
 
 ## Thanks
+Huge thanks to Skynettx and Alexbeav whos code is what all my Raptor ports here are based on.
 Special thanks to [nukeykt](https://github.com/nukeykt) and [wel97459](https://github.com/wel97459) for their great work on the reconstructed source code.
 Big thanks to [Scott Host](https://www.mking.com) for his great support.
 Also many thanks to [schellingb](https://github.com/schellingb) for the great TinySoundFont library and to all contributors from the

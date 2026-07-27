@@ -1,4 +1,8 @@
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#else
 #include "SDL.h"
+#endif
 #include "common.h"
 #include "i_video.h"
 #include "ptrapi.h"
@@ -459,6 +463,9 @@ PTR_DrawCursor(
     int flag               // INPUT: TRUE/FALSE
 )
 {
+    #if defined (__3DS__) || defined (__SWITCH__) || defined (XBOX)
+    g_drawcursor = 0;
+    #else
     if (ptractive)
     {
         if (!flag && ptrerase == 1)
@@ -477,6 +484,7 @@ PTR_DrawCursor(
     }
     else
         g_drawcursor = 0;
+    #endif
 }
 
 /***************************************************************************

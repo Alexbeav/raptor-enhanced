@@ -1,6 +1,10 @@
 #include <string.h>
 #include <ctype.h>
+#if defined (__3DS__) || defined (__SWITCH__)
+#include "SDL2/SDL.h"
+#else
 #include "SDL.h"
+#endif
 #include "common.h"
 #include "kbdapi.h"
 #include "i_video.h"
