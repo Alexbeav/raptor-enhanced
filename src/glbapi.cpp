@@ -185,17 +185,10 @@ GLB_FindFile(
 	*/
 	sprintf(filenamelc, "%s%04u.glb", "file", filenum);
 	
-	#if defined(__3DS__) || defined(__SWITCH__) || defined(XBOX)
-	if (!checkFile(filenamelc, 0))
-		strcpy(filename, filenamelc);
-	else
-		sprintf(filename, "%s%04u.GLB", prefix, filenum);
-	#else
 	if (!access(filenamelc, 0))
 		strcpy(filename, filenamelc);
 	else
 		sprintf(filename, "%s%04u.GLB", prefix, filenum);
-	#endif
 
 	if ((handle = fopen(filename, permissions)) == NULL)
 	{
@@ -203,11 +196,11 @@ GLB_FindFile(
 		if (handle == NULL)
         {
             #if defined (__3DS__) || defined (__SWITCH__)
-				sprintf(filename, "%s%s%04u.GLB", ROMFS, prefix, filenum);
+				sprintf(filename, "%s%s%04u.GLB", RAP_SD_DIR, prefix, filenum);
 				handle = fopen(filename, permissions);
 				if (handle == NULL)
 				{
-					sprintf(filename, "%s%s%04u.GLB", RAP_SD_DIR, prefix, filenum);
+					sprintf(filename, "%s%s%04u.GLB", ROMFS, prefix, filenum);
 					handle = fopen(filename, permissions);
 					if (handle == NULL)
 					{

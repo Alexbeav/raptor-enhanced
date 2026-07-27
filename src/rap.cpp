@@ -1446,7 +1446,7 @@ main(
     
     cur_diff = 0;
 
-    #if defined (__NDS__) || defined (__3DS__) || defined (__SWITCH__)
+    #if defined (__3DS__) || defined (__SWITCH__)
         if (!access(ROMFS "FILE0001.GLB", 0))
             gameflag[0] = 1;
         

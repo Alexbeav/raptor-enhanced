@@ -13,3 +13,6 @@ msvc/.vs
 build-linux/
 linux-smoketest.sh
 *.bak
+*.3dsx
+*.elf
+*.3dsx
