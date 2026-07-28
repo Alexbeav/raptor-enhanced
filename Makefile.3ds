@@ -39,8 +39,8 @@ ROMFS		:=	romfs
 GRAPHICS	:=	gfx
 GFXBUILD	:=	$(ROMFS)/gfx
 #---------------------------------------------------------------------------------
-APP_VER				:= 0091
-APP_TITLE			:= Raptor Enhanced 3DS V0.9.1
+APP_VER				:= 0100
+APP_TITLE			:= Raptor Enhanced 3DS V1.0.0
 APP_DESCRIPTION			:= Raptor Call of the Shadows Enhanced for Nintendo 3DS
 APP_AUTHOR			:= RetroGamer02
 PRODUCT_CODE			:= CTR-REN

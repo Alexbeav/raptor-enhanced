@@ -540,7 +540,7 @@ IPT_LoadPrefs(
     void
 )
 {
-    #if defined (__NDS__) || defined (__3DS__) || defined (__SWITCH__)
+    #if defined (__3DS__) || defined (__SWITCH__)
         opt_detail = INI_GetPreferenceLong("Setup", "Detail", 1);
         control = 2;
         haptic = 0;

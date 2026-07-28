@@ -1,7 +1,7 @@
 BasicInfo:
   Title                   : "RAPTOR"
   CompanyCode             : "00"
-  ProductCode             : "CTR-RAP"
+  ProductCode             : "CTR-REN"
   ContentType             : Application
   Logo                    : Homebrew # Nintendo / Licensed / Distributed / iQue / iQueForSystem
 

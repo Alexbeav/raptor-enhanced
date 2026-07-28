@@ -246,13 +246,13 @@ InitScreen(
 {
    #ifdef __3DS__
     printf(" RAPTOR: Call Of The Shadows V1.2\n (c)1994 Cygnus Studios\n");
-    printf(" RAPTOR-3DS-Enhanced: V0.9.2 by RetroGamer02\n");
+    printf(" RAPTOR-3DS-Enhanced: V1.0.0 by RetroGamer02\n");
     #elif __SWITCH__
     printf(" RAPTOR: Call Of The Shadows V1.2                        (c)1994 Cygnus Studios\n");
-    printf(" RAPTOR-Switch: V0.5.1 by RetroGamer02\n");
+    printf(" RAPTOR-Switch: V1.0.0 by RetroGamer02\n");
     #elif XBOX
     printf(" RAPTOR: Call Of The Shadows V1.2       (c)1994 Cygnus Studios\n");
-    printf(" RAPTOR-Xbox: V0.5.2 by RetroGamer02\n");
+    printf(" RAPTOR-Xbox: V0.5.4 by RetroGamer02\n");
     #else
     printf(" RAPTOR: Call Of The Shadows V1.2                        (c)1994 Cygnus Studios\n");
     #endif
@@ -283,7 +283,7 @@ ShutDown(
         mem = GLB_GetItem(FILE001_LASTSCR1_TXT);     //Get ANSI Screen Shareware from GLB to char*
 
     closewindow();                                   //Close Main Window
-    #if !defined (XBOX) && !defined (__NDS__)
+    #if !defined (XBOX)
     I_LASTSCR(mem);                                  //Call to display ANSI Screen 
     #endif
     GLB_FreeAll();
@@ -1661,9 +1661,7 @@ main(
     SND_InitSound();
     IPT_Init();
     GLB_FreeAll();
-    #ifndef __NDS__
     RAP_InitMem();
-    #endif
     
     printf("Loading Graphics\n");
 

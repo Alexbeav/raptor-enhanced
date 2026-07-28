@@ -164,7 +164,7 @@ SND_InitSound(
     }
 
     fx_volume = INI_GetPreferenceLong("SoundFX", "Volume", 127);
-    #if defined (__NDS__) || defined (__3DS__) || defined (__SWITCH__) || defined (XBOX)
+    #if defined (__3DS__) || defined (__SWITCH__) || defined (XBOX)
         fx_card = 5;
         fx_chans = 2;
     #else

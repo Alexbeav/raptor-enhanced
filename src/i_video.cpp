@@ -23,8 +23,6 @@
 #if defined (__3DS__) || defined (__SWITCH__)
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_opengl.h"
-#elif defined (__NDS__)
-#include "SDL.h"
 #else
 #include "SDL.h"
 #include "SDL_opengl.h"
@@ -236,14 +234,18 @@ void VIDEO_LoadPrefs(void)
         fullscreen = 1;
         aspect_ratio_correct = 0;
         txt_fullscreen = 1;
-        widescreen_bezel = 0;
-        g_smooth = 0;
+        // both default OFF and are deliberately not written to SETUP.INI: the
+	    // enhancements stay dormant until a later patch documents the keys
+        widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
+	    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 0);
     #elif XBOX
         fullscreen = 1;
         aspect_ratio_correct = 0;
         txt_fullscreen = 0;
-        widescreen_bezel = 0;
-        g_smooth = 0;
+        // both default OFF and are deliberately not written to SETUP.INI: the
+	    // enhancements stay dormant until a later patch documents the keys
+        widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
+	    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 0);
     #else
 	    fullscreen = INI_GetPreferenceLong("Video", "fullscreen", 0);
 	    aspect_ratio_correct = INI_GetPreferenceLong("Video", "aspect_ratio_correct", 1);

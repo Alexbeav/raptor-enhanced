@@ -16,3 +16,15 @@ linux-smoketest.sh
 *.3dsx
 *.elf
 *.3dsx
+*.zip
+*.cia
+*.3dsx
+*.elf
+*.nacp
+*.nro
+*.smdh
+*.bnr
+*.icn
+*.3ds
+rsrc/romfs
+rsrc/RomFS Builder.exe
