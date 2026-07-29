@@ -64,7 +64,6 @@
     <ClInclude Include="..\src\winids.h" />
   </ItemGroup>
   <ItemGroup>
-    <LanguageStandard>stdcpp17</LanguageStandard>
     <ClCompile Include="..\src\anims.cpp" />
     <ClCompile Include="..\src\bonus.cpp" />
     <ClCompile Include="..\src\demo.cpp" />
@@ -190,6 +189,7 @@
       <AdditionalIncludeDirectories>..\include\TinySoundFont;..\include\textscreen\include;..\include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4703;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -211,6 +211,7 @@
       <AdditionalIncludeDirectories>..\include\TinySoundFont;..\include\textscreen\include;..\include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4703;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -231,6 +232,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\include\TinySoundFont;..\include\textscreen\include;..\include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\include;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4703;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -250,6 +252,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\include\TinySoundFont;..\include\textscreen\include;..\include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\include;C:\Users\Skynet\source\libs\SDL2-devel-2.0.14-VC\SDL2-2.0.14\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4703;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
