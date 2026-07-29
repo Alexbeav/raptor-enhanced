@@ -80,6 +80,8 @@ set(SOURCE_FILES
     src/m_misc.cpp
     src/shots.cpp
     src/opl3.cpp
+    src/dbopl.cpp
+    src/opl_core.cpp
     src/eshot.cpp
     src/gfxapi_a.cpp
     src/dspapi.cpp
