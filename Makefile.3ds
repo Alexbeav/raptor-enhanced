@@ -58,7 +58,7 @@ ARCH	:= -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 CFLAGS	:= -Wall -Wcast-align -O3 -ffast-math \
 		$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -D__ARM__ -D__3DS__ -DNOCURSOR -DSBAUDIORATE
+CFLAGS	+=	$(INCLUDE) -D__ARM__ -D__3DS__ -DNOCURSOR -DSBAUDIORATE -DOPL_NO_NUKED
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++17
 
