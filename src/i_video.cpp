@@ -214,10 +214,10 @@ void VIDEO_LoadPrefs(void)
     fullscreen = INI_GetPreferenceLong("Video", "fullscreen", 0);
     aspect_ratio_correct = INI_GetPreferenceLong("Video", "aspect_ratio_correct", 1);
     txt_fullscreen = INI_GetPreferenceLong("Video", "txt_fullscreen", 0);
-    // both default OFF and are deliberately not written to SETUP.INI: the
-    // enhancements stay dormant until a later patch documents the keys
+    // dormant until a later patch documents the key; deliberately not
+    // written to SETUP.INI
     widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
-    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 0);
+    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 1);
 }
 
 // Decode the embedded RLE cockpit bezel into a static texture (once).
