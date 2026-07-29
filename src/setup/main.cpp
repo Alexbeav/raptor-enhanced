@@ -33,7 +33,7 @@ char g_setup_path[PATH_MAX];
 int controltype;
 int musiccard;
 int soundfxcard;
-int fullscreen, aspect_ratio, txt_fullscreen, haptic, joy_ipt_MenuNew, sys_midi, winmm_mpu_device, core_dls_synth, core_midi_port, alsaclient, alsaport;
+int fullscreen, aspect_ratio, txt_fullscreen, smooth_motion, oplemu, haptic, joy_ipt_MenuNew, sys_midi, winmm_mpu_device, core_dls_synth, core_midi_port, alsaclient, alsaport;
 int keymoveup, keymovedown, keymoveleft, keymoveright, keyfire, keyspecial, keymega;
 static char soundfont[128];
 static char* sf;
@@ -170,6 +170,8 @@ void GetSetupSettings(void)
 	fullscreen = INI_GetPreferenceLong("Video", "fullscreen", 0);
 	aspect_ratio = INI_GetPreferenceLong("Video", "aspect_ratio_correct", 1);
 	txt_fullscreen = INI_GetPreferenceLong("Video", "txt_fullscreen", 0);
+	smooth_motion = INI_GetPreferenceLong("Video", "smooth_motion", 1);
+	oplemu = INI_GetPreferenceLong("Music", "OplEmu", 0);
 	haptic = INI_GetPreferenceLong("Setup", "Haptic", 1);
 	joy_ipt_MenuNew = INI_GetPreferenceLong("Setup", "joy_ipt_MenuNew", 0);
 	sys_midi = INI_GetPreferenceLong("Setup", "sys_midi", 0);
@@ -415,6 +417,8 @@ void SaveSettings(TXT_UNCAST_ARG(widget), void* user_data)
 	INI_PutPreferenceLong("Video", "fullscreen", fullscreen);                          //Save Additional Feature fullscreen to SETUP.INI
 	INI_PutPreferenceLong("Video", "aspect_ratio_correct", aspect_ratio);              //Save Additional Feature aspect_ratio_correct to SETUP.INI
 	INI_PutPreferenceLong("Video", "txt_fullscreen", txt_fullscreen);                  //Save Additional Feature txt_fullscreen to SETUP.INI
+	INI_PutPreferenceLong("Video", "smooth_motion", smooth_motion);                    //Save Additional Feature smooth_motion to SETUP.INI
+	INI_PutPreferenceLong("Music", "OplEmu", oplemu);                                  //Save Additional Feature OplEmu to SETUP.INI
 }
 /////////////////////////////////////////////////////////Info Window/////////////////////////////////////////////////////////
 void InfoWindow(TXT_UNCAST_ARG(widget), void* user_data)
@@ -450,6 +454,8 @@ void AdditionalFeatures(TXT_UNCAST_ARG(widget), void* user_data)
 	txt_checkbox_t* fullscreenbox;
 	txt_checkbox_t* aspectratiobox;
 	txt_checkbox_t* textmodefullbox;
+	txt_checkbox_t* smoothmotionbox;
+	txt_checkbox_t* oplemubox;
 
 	txt_checkbox_t* systemmidibox;
 	txt_inputbox_t* winmmmpudevicebox;
@@ -465,6 +471,8 @@ void AdditionalFeatures(TXT_UNCAST_ARG(widget), void* user_data)
 	fullscreenbox = TXT_NewCheckBox("Fullscreen", &fullscreen);
 	aspectratiobox = TXT_NewCheckBox("Aspect Ratio", &aspect_ratio);
 	textmodefullbox = TXT_NewCheckBox("Text Mode Fullscreen", &txt_fullscreen);
+	smoothmotionbox = TXT_NewCheckBox("Smooth Motion (70 Hz Interpolation)", &smooth_motion);
+	oplemubox = TXT_NewCheckBox("Fast OPL Music Emulator (DBOPL)", &oplemu);
 
 	systemmidibox = TXT_NewCheckBox("System MIDI", &sys_midi);
 	winmmmpudevicebox = TXT_NewIntInputBox(&winmm_mpu_device, 3);
@@ -489,13 +497,16 @@ void AdditionalFeatures(TXT_UNCAST_ARG(widget), void* user_data)
 	TXT_AddWidgets(window, TXT_NewSeparator("Video"),
 		fullscreenbox,
 		aspectratiobox,
-		textmodefullbox, NULL);
+		textmodefullbox,
+		smoothmotionbox, NULL);
 
 	TXT_SetHelpLabel(fullscreenbox, "Select Fullscreen Mode On / Off");
 	TXT_SetHelpLabel(aspectratiobox, "Select Aspect Ratio Correction On / Off");
 	TXT_SetHelpLabel(textmodefullbox, "Select Text Mode Fullscreen On / Off");
+	TXT_SetHelpLabel(smoothmotionbox, "Interpolate sprite motion for smooth 70 Hz scrolling");
 
 	TXT_AddWidgets(window, TXT_NewSeparator("Audio"),
+		oplemubox,
 		systemmidibox, TXT_NewConditional(&sys_midi, 1,
 			TXT_NewHorizBox(TXT_NewStrut(4, 0), TXT_NewLabel("Windows Multimedia MIDI Device: "), winmmmpudevicebox,
 				TXT_NewLabel(" (Default = 0)"), NULL)),
@@ -510,6 +521,7 @@ void AdditionalFeatures(TXT_UNCAST_ARG(widget), void* user_data)
 				TXT_NewLabel(":"), alsaportbox, TXT_NewLabel(" (Default = 128:0)"), NULL)),
 		TXT_NewHorizBox(TXT_NewLabel("TSF SoundFont Filename: "), sfbox, NULL), NULL);
 
+	TXT_SetHelpLabel(oplemubox, "Use the faster DOSBox OPL core instead of Nuked OPL3");
 	TXT_SetHelpLabel(systemmidibox, "Select System MIDI On / Off");
 	TXT_SetHelpLabel(winmmmpudevicebox, "Enter the Windows Multimedia MIDI device");
 	TXT_SetHelpLabel(coredlssynthbox, "Select macOS Core Audio DLS Synthesizer On / Off");

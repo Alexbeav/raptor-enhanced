@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -48,6 +48,8 @@
     <ClInclude Include="..\src\musapi.h" />
     <ClInclude Include="..\src\m_misc.h" />
     <ClInclude Include="..\src\objects.h" />
+    <ClInclude Include="..\src\dbopl.h" />
+    <ClInclude Include="..\src\opl_core.h" />
     <ClInclude Include="..\src\opl3.h" />
     <ClInclude Include="..\src\prefapi.h" />
     <ClInclude Include="..\src\ptrapi.h" />
@@ -94,6 +96,8 @@
     <ClCompile Include="..\src\musapi.cpp" />
     <ClCompile Include="..\src\m_misc.cpp" />
     <ClCompile Include="..\src\objects.cpp" />
+    <ClCompile Include="..\src\dbopl.cpp" />
+    <ClCompile Include="..\src\opl_core.cpp" />
     <ClCompile Include="..\src\opl3.cpp" />
     <ClCompile Include="..\src\prefapi.cpp" />
     <ClCompile Include="..\src\ptrapi.cpp" />
