@@ -50,6 +50,20 @@ To start in fullscreen: open SETUP.INI (created in your Raptor folder
 the first time you run raptor.exe) and set, under [Video]:
        fullscreen=1
 
+SMOOTH MOTION: the game logic still runs at the original 35 Hz, but
+sprite and scroll positions are interpolated for fluid 70 Hz motion.
+It is ON by default. For the original chunkier motion set, under
+[Video]:
+       smooth_motion=0
+
+MUSIC EMULATOR: music is synthesized with the cycle-accurate Nuked
+OPL3 core. On very slow machines the faster DOSBox core can be
+selected instead - set, under [Music]:
+       OplEmu=1
+
+Both options can also be toggled in raptorsetup.exe under
+"Additional Features".
+
 A ready-made SETUP.INI (fullscreen, sensible defaults) is included in
 this package. Copy it into your Raptor folder ONLY if you have not
 already configured your own - it would replace your sound and control

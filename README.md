@@ -33,6 +33,24 @@ Releases are packaged automatically by CI on version tags: the same engine
 sources build for Windows (MSVC) and Linux (GCC/SDL2/ALSA). The upstream
 build and configuration reference below is retained from that project.
 
+## Fork engine options
+
+Beyond Delta Sector support, this fork adds two engine options, both
+configurable in Raptor Setup under **Additional Features** or in `SETUP.INI`:
+
+- **Smooth motion** (`[Video] smooth_motion=1`, **on** by default): game
+  logic still runs at the original 35 Hz, but sprite and scroll positions
+  are interpolated for fluid 70 Hz motion. Set `smooth_motion=0` for the
+  original presentation.
+- **Selectable OPL music emulator** (`[Music] OplEmu=0`, Nuked by default):
+  music is synthesized with the cycle-accurate
+  [Nuked OPL3](https://github.com/nukeykt/Nuked-OPL3) core. `OplEmu=1`
+  switches to the much cheaper [DOSBox dbopl](https://github.com/rofl0r/dbopl)
+  core — handy on very slow machines, and aimed at downstream console and
+  handheld ports. Ports can also compile a core out entirely by defining
+  `OPL_NO_NUKED` or `OPL_NO_DBOPL` and dropping the matching source file
+  (see `src/opl_core.h`).
+
 ---
 
 # Upstream Raptor documentation
