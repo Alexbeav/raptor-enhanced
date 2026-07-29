@@ -44,7 +44,7 @@ jobs:
             build/bin/raptor
             build/bin/raptorsetup
 
-  3ds-armv6k:
+  n3ds-armv6k:
     runs-on: ubuntu-latest
     container: devkitpro/devkitarm:latest
     steps:
