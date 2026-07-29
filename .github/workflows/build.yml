@@ -43,6 +43,23 @@ jobs:
             build/bin/raptor
             build/bin/raptorsetup
 
+  3ds-armv6k:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: make -f Makefile.3ds
+
+      - name: Build 3DS Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: raptor-enhanced-3ds
+          path: |
+            *.3dsx
+            *.smdh
+
   release:
     # Runs on version tags (v*): assembles the same package layout as the
     # hand-made releases (payload from pkg/release/) plus a Linux tarball,
