@@ -15,7 +15,7 @@ static opl3_chip nuked_chip;
 
 #ifndef OPL_NO_DBOPL
 #include "dbopl.h"
-static DBOPL::Handler dbopl_chip;
+static DBOPL::Handler dbopl_chip = DBOPL::Handler(0);
 #endif
 
 enum
