@@ -23,7 +23,7 @@
 #include <stdint.h>
 
 #include "common.h"
-#include "opl3.h"
+#include "opl_core.h"
 #include "i_oplmusic.h"
 #include "musapi.h"
 #include "fx.h"
@@ -58,8 +58,6 @@
 #define GENMIDI_FLAG_2VOICE     0x0004         /* double voice (OPL3) */
 
 using byte = uint8_t;
-
-opl3_chip opl;
 
 #pragma pack(push, 1)
 struct genmidi_op_t
@@ -454,11 +452,11 @@ static void LoadOperatorData(int _operator, genmidi_op_t *data,
 
     *volume = level;
 
-    OPL3_WriteRegBuffered(&opl, OPL_REGS_LEVEL + _operator, level);
-    OPL3_WriteRegBuffered(&opl, OPL_REGS_TREMOLO + _operator, data->tremolo);
-    OPL3_WriteRegBuffered(&opl, OPL_REGS_ATTACK + _operator, data->attack);
-    OPL3_WriteRegBuffered(&opl, OPL_REGS_SUSTAIN + _operator, data->sustain);
-    OPL3_WriteRegBuffered(&opl, OPL_REGS_WAVEFORM + _operator, data->waveform);
+    OPLCore_WriteReg(OPL_REGS_LEVEL + _operator, level);
+    OPLCore_WriteReg(OPL_REGS_TREMOLO + _operator, data->tremolo);
+    OPLCore_WriteReg(OPL_REGS_ATTACK + _operator, data->attack);
+    OPLCore_WriteReg(OPL_REGS_SUSTAIN + _operator, data->sustain);
+    OPLCore_WriteReg(OPL_REGS_WAVEFORM + _operator, data->waveform);
 }
 
 // Set the instrument for a particular voice.
@@ -501,7 +499,7 @@ static void SetVoiceInstrument(opl_voice_t *voice,
     // two operators.  Turn on bits in the upper nybble; I think this
     // is for OPL3, where it turns on channel A/B.
 
-    OPL3_WriteRegBuffered(&opl, (OPL_REGS_FEEDBACK + voice->index) | voice->array,
+    OPLCore_WriteReg((OPL_REGS_FEEDBACK + voice->index) | voice->array,
                       data->feedback | voice->reg_pan);
 
     // Calculate voice priority.
@@ -538,7 +536,7 @@ static void SetVoiceVolume(opl_voice_t *voice, unsigned int volume)
     {
         voice->car_volume = car_volume | (voice->car_volume & 0xc0);
 
-        OPL3_WriteRegBuffered(&opl, (OPL_REGS_LEVEL + voice->op2) | voice->array,
+        OPLCore_WriteReg((OPL_REGS_LEVEL + voice->op2) | voice->array,
                           voice->car_volume);
 
         // If we are using non-modulated feedback mode, we must set the
@@ -558,7 +556,7 @@ static void SetVoiceVolume(opl_voice_t *voice, unsigned int volume)
             if(mod_volume != voice->mod_volume)
             {
                 voice->mod_volume = mod_volume;
-                OPL3_WriteRegBuffered(&opl, (OPL_REGS_LEVEL + voice->op1) | voice->array,
+                OPLCore_WriteReg((OPL_REGS_LEVEL + voice->op1) | voice->array,
                                   mod_volume |
                                   (opl_voice->modulator.scale & 0xc0));
             }
@@ -573,7 +571,7 @@ static void SetVoicePan(opl_voice_t *voice, unsigned int pan)
     voice->reg_pan = pan;
     opl_voice = &voice->current_instr->voices[voice->current_instr_voice];;
 
-    OPL3_WriteRegBuffered(&opl, (OPL_REGS_FEEDBACK + voice->index) | voice->array,
+    OPLCore_WriteReg((OPL_REGS_FEEDBACK + voice->index) | voice->array,
                       opl_voice->feedback | pan);
 }
 
@@ -606,7 +604,7 @@ static void InitVoices(void)
 
 static void VoiceKeyOff(opl_voice_t *voice)
 {
-    OPL3_WriteRegBuffered(&opl, (OPL_REGS_FREQ_2 + voice->index) | voice->array,
+    OPLCore_WriteReg((OPL_REGS_FREQ_2 + voice->index) | voice->array,
                       voice->freq >> 8);
 }
 
@@ -813,9 +811,9 @@ static void UpdateVoiceFrequency(opl_voice_t *voice)
 
     if (voice->freq != freq)
     {
-        OPL3_WriteRegBuffered(&opl, (OPL_REGS_FREQ_1 + voice->index) | voice->array,
+        OPLCore_WriteReg((OPL_REGS_FREQ_1 + voice->index) | voice->array,
                           freq & 0xff);
-        OPL3_WriteRegBuffered(&opl, (OPL_REGS_FREQ_2 + voice->index) | voice->array,
+        OPLCore_WriteReg((OPL_REGS_FREQ_2 + voice->index) | voice->array,
                           (freq >> 8) | 0x20);
 
         voice->freq = freq;
@@ -1217,7 +1215,7 @@ static void OPL_InitRegisters(int opl3)
 
     for (r=OPL_REGS_LEVEL; r <= OPL_REGS_LEVEL + OPL_NUM_OPERATORS; ++r)
     {
-        OPL3_WriteRegBuffered(&opl, r, 0x3f);
+        OPLCore_WriteReg(r, 0x3f);
     }
 
     // Initialize other registers
@@ -1227,34 +1225,34 @@ static void OPL_InitRegisters(int opl3)
 
     for (r=OPL_REGS_ATTACK; r <= OPL_REGS_WAVEFORM + OPL_NUM_OPERATORS; ++r)
     {
-        OPL3_WriteRegBuffered(&opl, r, 0x00);
+        OPLCore_WriteReg(r, 0x00);
     }
 
     // More registers ...
 
     for (r=1; r < OPL_REGS_LEVEL; ++r)
     {
-        OPL3_WriteRegBuffered(&opl, r, 0x00);
+        OPLCore_WriteReg(r, 0x00);
     }
 
     // Re-initialize the low registers:
 
     // Reset both timers and enable interrupts:
-    OPL3_WriteRegBuffered(&opl, OPL_REG_TIMER_CTRL,      0x60);
-    OPL3_WriteRegBuffered(&opl, OPL_REG_TIMER_CTRL,      0x80);
+    OPLCore_WriteReg(OPL_REG_TIMER_CTRL,      0x60);
+    OPLCore_WriteReg(OPL_REG_TIMER_CTRL,      0x80);
 
     // "Allow FM chips to control the waveform of each operator":
-    OPL3_WriteRegBuffered(&opl, OPL_REG_WAVEFORM_ENABLE, 0x20);
+    OPLCore_WriteReg(OPL_REG_WAVEFORM_ENABLE, 0x20);
 
     if (opl3)
     {
-        OPL3_WriteRegBuffered(&opl, OPL_REG_NEW, 0x01);
+        OPLCore_WriteReg(OPL_REG_NEW, 0x01);
 
         // Initialize level registers
 
         for (r=OPL_REGS_LEVEL; r <= OPL_REGS_LEVEL + OPL_NUM_OPERATORS; ++r)
         {
-            OPL3_WriteRegBuffered(&opl, r | 0x100, 0x3f);
+            OPLCore_WriteReg(r | 0x100, 0x3f);
         }
 
         // Initialize other registers
@@ -1264,23 +1262,23 @@ static void OPL_InitRegisters(int opl3)
 
         for (r=OPL_REGS_ATTACK; r <= OPL_REGS_WAVEFORM + OPL_NUM_OPERATORS; ++r)
         {
-            OPL3_WriteRegBuffered(&opl, r | 0x100, 0x00);
+            OPLCore_WriteReg(r | 0x100, 0x00);
         }
 
         // More registers ...
 
         for (r=1; r < OPL_REGS_LEVEL; ++r)
         {
-            OPL3_WriteRegBuffered(&opl, r | 0x100, 0x00);
+            OPLCore_WriteReg(r | 0x100, 0x00);
         }
     }
 
     // Keyboard split point on (?)
-    OPL3_WriteRegBuffered(&opl, OPL_REG_FM_MODE,         0x40);
+    OPLCore_WriteReg(OPL_REG_FM_MODE,         0x40);
 
     if (opl3)
     {
-        OPL3_WriteRegBuffered(&opl, OPL_REG_NEW, 0x01);
+        OPLCore_WriteReg(OPL_REG_NEW, 0x01);
     }
 }
 
@@ -1318,7 +1316,7 @@ int I_OPL_InitMusic(int dummy)
     // into their correct orientation.
     opl_stereo_correct = strstr(dmxoption, "-reverse") != NULL;*/
 
-    OPL3_Reset(&opl, fx_freq);
+    OPLCore_Init(fx_freq);
 
     // Initialize all registers.
 
@@ -1344,7 +1342,7 @@ void I_SetOPLDriverVer(opl_driver_ver_t ver)
 
 void I_OPL_Mix(int16_t *stream, int len)
 {
-    OPL3_GenerateStream(&opl, stream, len);
+    OPLCore_Generate(stream, len);
 }
 
 void ProgramChgEvent(unsigned int chan, unsigned int param){
