@@ -255,45 +255,49 @@ WIN_Opts(
         SWD_Dialog(&dlg);
         I_GetNeedResize(false);
 
-        if (joy_ipt_MenuNew)
+        if (joy_menu_keys)
         {
-            if (StickY > 0 || Down)                                                   
+            // Stick-as-arrows only in pure MenuNew mode; in the PSP hybrid
+            // the nub is the free cursor and only the D-pad navigates.
+            if ((joy_ipt_MenuNew && StickY > 0) || Down)
             {
                 if (JOY_IsScroll(0) == 1)
                     dlg.keypress = SC_DOWN;
             }
-            
-            if (StickY < 0 || Up)
+
+            if ((joy_ipt_MenuNew && StickY < 0) || Up)
             {
                 if (JOY_IsScroll(0) == 1)
                     dlg.keypress = SC_UP;
             }
-            
-            if (StickX > 0 || Right)
+
+            if ((joy_ipt_MenuNew && StickX > 0) || Right)
             {
                 if (JOY_IsScroll(0) == 1)
                     dlg.keypress = SC_RIGHT;
             }
-            
-            if (StickX < 0 || Left)
+
+            if ((joy_ipt_MenuNew && StickX < 0) || Left)
             {
                 if (JOY_IsScroll(0) == 1)
                     dlg.keypress = SC_LEFT;
             }
-            
+
             if (Back)
             {
                 dlg.keypress = SC_ESC;
                 JOY_IsKey(Back);
             }
-            
+
             if (BButton)
             {
                 dlg.keypress = SC_ESC;
                 JOY_IsKey(BButton);
             }
-            
-            if (AButton)
+
+            // In pointer mode Cross-over-a-field is a click (handled by
+            // SWD/viewactive paths); only synthesize ENTER when not hovering.
+            if (AButton && !dlg.viewactive)
             {
                 dlg.keypress = SC_ENTER;
                 JOY_IsKey(AButton);
@@ -835,14 +839,14 @@ WIN_Register(
         SWD_Dialog(&dlg);
         I_GetNeedResize(false);
 
-        if (joy_ipt_MenuNew)                                                               
+        if (joy_menu_keys)
         {
-            if (LeftShoulder)                                           
+            if (LeftShoulder)
             {
                 JOY_IsKey(LeftShoulder);
                 dlg.keypress = SC_CTRL;
             }
-            
+
             if (RightShoulder)
             {
                 JOY_IsKey(RightShoulder);
@@ -1199,38 +1203,38 @@ WIN_Hangar(
             SWD_Dialog(&dlg);
             I_GetNeedResize(false);
 
-            if (joy_ipt_MenuNew)
+            if (joy_menu_keys)
             {
-                if (StickY > 0 || Down)                                                   
+                if ((joy_ipt_MenuNew && StickY > 0) || Down)
                 {
                     JOY_IsKey(StickY);
                     dlg.keypress = SC_DOWN;
                 }
-                
-                if (StickY < 0 || Up)
+
+                if ((joy_ipt_MenuNew && StickY < 0) || Up)
                 {
                     JOY_IsKey(StickY);
                     dlg.keypress = SC_UP;
                 }
-                
-                if (StickX > 0 || Right)
+
+                if ((joy_ipt_MenuNew && StickX > 0) || Right)
                 {
                     JOY_IsKey(StickX);
                     dlg.keypress = SC_RIGHT;
                 }
-                
-                if (StickX < 0 || Left)
+
+                if ((joy_ipt_MenuNew && StickX < 0) || Left)
                 {
                     JOY_IsKey(StickX);
                     dlg.keypress = SC_LEFT;
                 }
-                
-                if (AButton)
+
+                if (AButton && !dlg.viewactive)
                 {
                     JOY_IsKey(AButton);
                     dlg.keypress = SC_ENTER;
                 }
-                
+
                 if (RightShoulder)
                 {
                     JOY_IsKey(RightShoulder);
@@ -1554,20 +1558,20 @@ WIN_ShipComp(
         SWD_Dialog(&dlg);
         I_GetNeedResize(false);
 
-        if (joy_ipt_MenuNew)
+        if (joy_menu_keys)
         {
-            if (Back)                                                         
+            if (Back)
             {
                 JOY_IsKey(Back);
                 dlg.keypress = SC_ESC;
             }
-            
+
             if (BButton)
             {
                 JOY_IsKey(BButton);
                 dlg.keypress = SC_ESC;
             }
-            
+
             if (RightShoulder)
             {
                 JOY_IsKey(RightShoulder);

@@ -463,7 +463,10 @@ PTR_DrawCursor(
     int flag               // INPUT: TRUE/FALSE
 )
 {
-    #ifdef NOCURSOR
+    // PSP is not in this guard: it runs the classic joystick-pointer mode
+    // (analog nub moves a drawn cursor, Cross clicks), so the software
+    // cursor must actually render there.
+    #if defined (__3DS__) || defined (__SWITCH__) || defined (XBOX)
     g_drawcursor = 0;
     #else
     if (ptractive)

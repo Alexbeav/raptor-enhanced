@@ -5,6 +5,7 @@
 #endif
 #include "i_video.h"
 #include "joyapi.h"
+#include "input.h"
 
 int joy_ack;
 
@@ -234,12 +235,17 @@ IPT_CalJoyRumbleHigh(
 /***************************************************************************
 JOY_Wait() - Waits for button to be released
  ***************************************************************************/
-void 
+void
 JOY_Wait(
 	int button
 )
 {
-	while (StickX || StickY || Up || Down || Left || Right || Start || Back || LeftShoulder || RightShoulder || AButton || BButton || XButton || YButton)
+	// In the PSP pointer+menu-keys hybrid the stick is the cursor, not a
+	// key: never spin waiting for it to recentre (it is legitimately held
+	// while navigating with the D-pad or clicking with Cross).
+	int stick = !(joy_menu_keys && !joy_ipt_MenuNew);
+
+	while ((stick && (StickX || StickY)) || Up || Down || Left || Right || Start || Back || LeftShoulder || RightShoulder || AButton || BButton || XButton || YButton)
 	{
 		I_GetEvent();
 	}
@@ -248,18 +254,20 @@ JOY_Wait(
 /***************************************************************************
 JOY_IsKey() - Tests to see if button is down if so waits for release
  ***************************************************************************/
-int 
+int
 JOY_IsKey(
 	int button
 )
 {
-	if (StickX || StickY || Up || Down || Left || Right || Start || Back || LeftShoulder || RightShoulder || AButton || BButton || XButton || YButton)
+	int stick = !(joy_menu_keys && !joy_ipt_MenuNew);
+
+	if ((stick && (StickX || StickY)) || Up || Down || Left || Right || Start || Back || LeftShoulder || RightShoulder || AButton || BButton || XButton || YButton)
 	{
 		JOY_Wait(button);
-		
+
 		return 1;
 	}
-    
+
 	return 0;
 }
 

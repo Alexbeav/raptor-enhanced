@@ -585,28 +585,31 @@ SWD_DoButton(
 )
 {
     // == CONTROLLER INPUT ==============================
-    
-    if (joy_ipt_MenuNew)                                                 
+
+    if (joy_menu_keys)
     {
-        if (StickY > 0 || Down)                                                   
+        // The stick only doubles as arrows in pure MenuNew mode (3DS/Switch,
+        // no pointer). In the PSP hybrid the nub is the cursor, so only the
+        // D-pad synthesizes arrow keys.
+        if ((joy_ipt_MenuNew && StickY > 0) || Down)
         {
             if (JOY_IsScroll(0) == 1)
                 g_key = SC_DOWN;
         }
-        
-        if (StickY < 0 || Up)
+
+        if ((joy_ipt_MenuNew && StickY < 0) || Up)
         {
             if (JOY_IsScroll(0) == 1)
                 g_key = SC_UP;
         }
-        
-        if (StickX > 0 || Right)
+
+        if ((joy_ipt_MenuNew && StickX > 0) || Right)
         {
             if (JOY_IsScroll(0) == 1)
                 g_key = SC_RIGHT;
         }
-        
-        if (StickX < 0 || Left)
+
+        if ((joy_ipt_MenuNew && StickX < 0) || Left)
         {
             if (JOY_IsScroll(0) == 1)
                 g_key = SC_LEFT;
@@ -701,14 +704,14 @@ SWD_FieldInput(
     
     curpos = strlen(wrkbuf);
     
-    // == CONTROLLER FIELDINPUT ==============================   
-    
-    if (joy_ipt_MenuNew)
+    // == CONTROLLER FIELDINPUT ==============================
+
+    if (joy_menu_keys)
     {
         
         // == INPUT CONTROLLER MAX FIELDINPUT ==============================
-        
-        if (StickY || Down || Up || AButton || YButton || Start)            
+
+        if ((joy_ipt_MenuNew && StickY) || Down || Up || AButton || YButton || Start)
         {
             if (curpos > 17)
             {
@@ -728,7 +731,7 @@ SWD_FieldInput(
         
         // == INPUT CONTROLLER ASCII TABLE DOWN ==============================
 
-        if (StickY > 0 || Down)                                                    
+        if ((joy_ipt_MenuNew && StickY > 0) || Down)
         {
             if (JOY_IsScroll(0) == 1)
             {
@@ -757,7 +760,7 @@ SWD_FieldInput(
         
         // == INPUT CONTROLLER ASCII TABLE UP ==============================
 
-        if (StickY < 0 || Up)                                                    
+        if ((joy_ipt_MenuNew && StickY < 0) || Up)
         {
             if (JOY_IsScroll(0) == 1)
             {
@@ -784,18 +787,18 @@ SWD_FieldInput(
             }
         }
         
-        if (StickX > 0 || Right)
+        if ((joy_ipt_MenuNew && StickX > 0) || Right)
         {
             if (JOY_IsScroll(0) == 1)
                 g_key = SC_RIGHT;
         }
-        
-        if (StickX < 0 || Left)
+
+        if ((joy_ipt_MenuNew && StickX < 0) || Left)
         {
             if (JOY_IsScroll(0) == 1)
                 g_key = SC_LEFT;
         }
-        
+
         // == INPUT CONTROLLER NEXT INPUT ==============================
 
         if (AButton)                                                  
@@ -1903,8 +1906,11 @@ SWD_SetWindowPtr(
     {
         curfld = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs));
         curfld += active_field;
-        
-        PTR_SetPos(LE_LONG(curfld->x) + (LE_LONG(curfld->lx)>>1), LE_LONG(curfld->y) + (LE_LONG(curfld->ly)>>1));
+
+        // Field coords are window-relative (see SWD_GetFieldXYL);
+        // add the window origin or non-origin windows snap wrong.
+        PTR_SetPos(LE_LONG(curwin->x) + LE_LONG(curfld->x) + (LE_LONG(curfld->lx)>>1),
+                   LE_LONG(curwin->y) + LE_LONG(curfld->y) + (LE_LONG(curfld->ly)>>1));
     }
 }
 
@@ -1935,8 +1941,10 @@ SWD_SetFieldPtr(
     {
         curfld = (SFIELD*)((char*)curwin + LE_LONG(curwin->fldofs));
         curfld += field;
-        
-        PTR_SetPos(LE_LONG(curfld->x) + (LE_LONG(curfld->lx)>>1), LE_LONG(curfld->y) + (LE_LONG(curfld->ly)>>1));
+
+        // Field coords are window-relative (see SWD_GetFieldXYL).
+        PTR_SetPos(LE_LONG(curwin->x) + LE_LONG(curfld->x) + (LE_LONG(curfld->lx)>>1),
+                   LE_LONG(curwin->y) + LE_LONG(curfld->y) + (LE_LONG(curfld->ly)>>1));
     }
 }
 
@@ -1975,9 +1983,14 @@ SWD_SetActiveField(
     
     if (curfld->kbflag != 0)
         highlight_flag = 1;
-    
+
     kbactive = curfld->kbflag != 0;
     active_field = field_id;
+
+    // PSP pointer+menu-keys hybrid: keep the cursor on the selected field so
+    // hover and highlight never disagree (Cross always acts on what's shown).
+    if (joy_menu_keys && !joy_ipt_MenuNew)
+        SWD_SetFieldPtr(handle, field_id);
 }
 
 /***************************************************************************
@@ -2335,11 +2348,30 @@ SWD_Dialog(
     if (active_field == -1)
         return;
 
-    if ((mouseb1 && !cur_act) || (AButton && !joy_ipt_MenuNew && !cur_act))                            
+    // Pointer+menu-keys hybrid (PSP): while a text-input field is active,
+    // Cross must reach SWD_FieldInput ("next character" during name entry),
+    // so it does not count as a click there.
+    int a_clicks = AButton && !joy_ipt_MenuNew
+        && !(joy_menu_keys && fldfuncs[LE_LONG(curfld->opt)] == SWD_FieldInput);
+
+    if ((mouseb1 && !cur_act) || (a_clicks && !cur_act))
     {
+        int mousehit;
+
         old_field = active_field;
-        
-        if (SWD_CheckMouse(LE_LONG(curwin->lock), curwin, firstfld))
+
+        mousehit = SWD_CheckMouse(LE_LONG(curwin->lock), curwin, firstfld);
+
+        // Cross over empty space selects the field the D-pad highlighted,
+        // so arrow navigation stays actionable. Cross over a field takes
+        // the normal click handling below instead.
+        if (!mousehit && a_clicks && !mouseb1 && joy_menu_keys)
+        {
+            JOY_IsKey(AButton);
+            cur_act = S_FLD_COMMAND;
+            cur_cmd = F_SELECT;
+        }
+        else if (mousehit)
         {
             if (old_win != active_window)
             {
@@ -2485,8 +2517,14 @@ SWD_Dialog(
             update = 1;
             break;
         }
+
+        // PSP hybrid: D-pad navigation snaps the cursor onto the newly
+        // selected field (same idea as the hangar's own PTR_SetPos logic),
+        // so a following Cross press clicks exactly what is highlighted.
+        if (cur_cmd != F_SELECT && joy_menu_keys && !joy_ipt_MenuNew)
+            SWD_SetWindowPtr(active_window);
         break;
-    
+
     case S_WIN_COMMAND:
         swd_dlg->x = LE_LONG(curwin->x);
         swd_dlg->y = LE_LONG(curwin->y);

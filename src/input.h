@@ -17,6 +17,11 @@ extern int buttons[4];
 extern int control;
 extern int haptic;
 extern int joy_ipt_MenuNew;
+// True when menus should synthesize keypresses from the controller
+// (D-pad arrows, letter cycling in input fields). Mirrors joy_ipt_MenuNew
+// everywhere except PSP, which runs the pointer AND the menu keys together:
+// nub moves the cursor, Cross clicks, D-pad navigates fields / cycles letters.
+extern int joy_menu_keys;
 
 void IPT_LoadPrefs(void);
 void IPT_GetButtons(void);

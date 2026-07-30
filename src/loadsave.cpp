@@ -103,14 +103,16 @@ SaveRead32(
     void
 )
 {
-    int convert;
+    // Assemble as unsigned: SaveRead8() promotes to signed int, and shifting
+    // a byte with the high bit set left by 24 is undefined behaviour.
+    uint32_t convert;
 
     convert = SaveRead8();
-    convert |= SaveRead8() << 8;
-    convert |= SaveRead8() << 16;
-    convert |= SaveRead8() << 24;
+    convert |= (uint32_t)SaveRead8() << 8;
+    convert |= (uint32_t)SaveRead8() << 16;
+    convert |= (uint32_t)SaveRead8() << 24;
 
-    return convert;
+    return (int)convert;
 }
 
 /***************************************************************************
@@ -937,16 +939,16 @@ RAP_LoadWin(
         SWD_Dialog(&dlg);
         I_GetNeedResize(false);
         
-        if (joy_ipt_MenuNew)
+        if (joy_menu_keys)
         {
-            if (XButton)                                                                                                                        
+            if (XButton)
             {
                 JOY_IsKey(XButton);
                 dlg.keypress = SC_DELETE;
             }
         }
         
-        if ((KBD_IsKey(SC_ESC)) || (JOY_IsKeyMenu(Back) && joy_ipt_MenuNew) || (JOY_IsKeyMenu(BButton) && joy_ipt_MenuNew))                                      
+        if ((KBD_IsKey(SC_ESC)) || (JOY_IsKeyMenu(Back) && joy_menu_keys) || (JOY_IsKeyMenu(BButton) && joy_menu_keys))
         {
             rval = 0;
             goto load_exit;

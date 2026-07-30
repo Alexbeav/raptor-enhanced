@@ -474,24 +474,26 @@ STORE_Enter(
             }
         }
         
-        if (joy_ipt_MenuNew)
+        if (joy_menu_keys)
         {
-            if (StickY > 0)                                                   
+            // Stick-as-arrows only in pure MenuNew mode; in the PSP hybrid
+            // the nub is the free cursor and only the D-pad navigates.
+            if (joy_ipt_MenuNew && StickY > 0)
             {
                 JOY_IsKey(StickY);
                 dlg.keypress = SC_DOWN;
             }
-            if (StickY < 0)
+            if (joy_ipt_MenuNew && StickY < 0)
             {
                 JOY_IsKey(StickY);
                 dlg.keypress = SC_UP;
             }
-            if (StickX > 0)
+            if (joy_ipt_MenuNew && StickX > 0)
             {
                 JOY_IsKey(StickX);
                 dlg.keypress = SC_RIGHT;
             }
-            if (StickX < 0)
+            if (joy_ipt_MenuNew && StickX < 0)
             {
                 JOY_IsKey(StickX);
                 dlg.keypress = SC_LEFT;
@@ -516,7 +518,9 @@ STORE_Enter(
                 JOY_IsKey(Right);
                 dlg.keypress = SC_RIGHT;
             }
-            if (AButton)
+            // Cross over a store button is a click (viewactive paths); only
+            // synthesize ENTER ("buy it") when the cursor isn't hovering one.
+            if (AButton && !dlg.viewactive)
             {
                 JOY_IsKey(AButton);
                 dlg.keypress = SC_ENTER;
