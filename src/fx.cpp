@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#if defined (__3DS__) || defined (__SWITCH__)
+#if defined (__3DS__) || defined (__SWITCH__) || defined(__PSP__)
 #include "SDL2/SDL.h"
 #else
 #include "SDL.h"
@@ -28,6 +28,8 @@ static int lockcount;
 #ifdef __3DS__
 int fx_freq = 22050;
 #elif __SWITCH__
+int fx_freq = 22050;
+#elif __PSP__
 int fx_freq = 22050;
 #else
 int fx_freq = 44100;

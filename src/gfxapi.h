@@ -43,7 +43,7 @@ typedef struct
     int height;             // heigth of pic
 }GFX_PIC;
 
-#if defined (__ARM__)
+#if defined (__ARM__) || defined (__PSP__)
 typedef struct __attribute__((packed))
 {
     int x;                  // X POS OF SEG

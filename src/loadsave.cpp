@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#if defined (__3DS__) || defined (__SWITCH__)
+#if defined (__3DS__) || defined (__SWITCH__) || defined(__PSP__)
 #include "SDL2/SDL_filesystem.h"
 #else
 #include "SDL_filesystem.h"
@@ -51,7 +51,7 @@ int map_item = -1;
 int curplr_diff = 2;
 int srwpos = 0;
 
-#if defined (__3DS__) || defined (__SWITCH__)
+#if defined (__3DS__) || defined (__SWITCH__) || defined (__PSP__)
     static const char *fmt = RAP_SD_DIR "CHAR%04u.FIL";
     static const char* cdfmt = RAP_SD_DIR "%s\\CHAR%04u.FIL";
 #elif defined (XBOX)

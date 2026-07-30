@@ -68,7 +68,9 @@ static char *ExecReadOutput(char **argv)
 
     if (pid == 0)
     {
+        #ifndef __PSP__
         dup2(pipefd[1], fileno(stdout));
+        #endif
         execv(argv[0], argv);
         exit(-1);
     }
@@ -89,10 +91,17 @@ static char *ExecReadOutput(char **argv)
         char buf[64];
         int bytes;
 
+        #ifdef __PSP__
+        if (!completed)
+        {
+            completed = 1;
+        }
+        #else
         if (!completed && waitpid(pid, &status, WNOHANG) != 0)
         {
             completed = 1;
         }
+        #endif
 
         bytes = read(pipefd[0], buf, sizeof(buf));
 

@@ -9,6 +9,8 @@ void LOG_Printf(const char *fmt, ...);
 #include "arm.h"
 #elif XBOX
 #include "xbox.h"
+#elif __PSP__
+#include "mips.h"
 #endif
 
 static inline void EXIT_Error(const char *a1, ...)

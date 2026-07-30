@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
-#if defined (__3DS__) || defined (__SWITCH__)
+#if defined (__3DS__) || defined (__SWITCH__) || defined(__PSP__)
 #include "SDL2/SDL.h"
 #else
 #include "SDL.h"
@@ -1358,11 +1358,19 @@ RAP_InitMem(
 /***************************************************************************
 main() -
  ***************************************************************************/
+#ifdef __PSP__
+int
+SDL_main(
+    int argc, 
+    char *argv[]
+)
+#else
 int 
 main(
     int argc, 
     char *argv[]
 )
+#endif
 {
     char *var1, *tptr, *pal;
     int loop, numfiles, ptrflag, item, delta_maps;
@@ -1370,7 +1378,7 @@ main(
 
     var1 = getenv("S_HOST");
 
-    #if defined (__ARM__) || defined (XBOX)
+    #if defined (__ARM__) || defined (XBOX) || defined (__PSP__D)
     sys_init();
     #endif
 
@@ -1379,7 +1387,7 @@ main(
     RAP_InitLoadSave();
     LOG_Init();
     
-#if _WIN32 || __linux__ || __APPLE__
+#if _WIN32 || __linux__ || __APPLE__ || __PSP__
     if (access(RAP_SetupFilename(), 0))
     {
         INI_InitPreference(RAP_SetupFilename());
@@ -1421,6 +1429,7 @@ main(
         godmode = 0;
 
     #ifndef __ARM__
+    #ifndef __PSP__
     if (argv[1])
     {
         if (!strcmp(argv[1], "REC"))
@@ -1440,13 +1449,14 @@ main(
         }
     }
     #endif
+    #endif
 
     if (godmode)
         printf("GOD mode enabled\n");
     
     cur_diff = 0;
 
-    #if defined (__3DS__) || defined (__SWITCH__)
+    #if defined (__3DS__) || defined (__SWITCH__) || defined (__PSP__D)
         if (!access(ROMFS "FILE0001.GLB", 0))
             gameflag[0] = 1;
         
@@ -1508,7 +1518,7 @@ main(
             numfiles++;
     }
 
-    #if defined (__3DS__) || defined (__SWITCH__)
+    #if defined (__3DS__) || defined (__SWITCH__) || defined (__PSP__D)
         if (access(ROMFS "FILE0000.GLB", 0) || !numfiles)
         {
             printf("All game data files NOT FOUND cannot proceed !!\n");
@@ -1584,7 +1594,7 @@ main(
 
     // ================================================
 
-	#if defined(__3DS__) || defined(__SWITCH__) || (XBOX)
+	#if defined(__3DS__) || defined(__SWITCH__) || defined(XBOX) || defined(__PSP__D)
 	INI_InitPreference(RAP_SetupFilename());
 	#else
     if (access(RAP_SetupFilename(), 0))
@@ -1634,7 +1644,7 @@ main(
         printf("Registered EXE!\n");
         fflush(stdout);
     }
-    
+
 #if _WIN32 || __linux__ || __APPLE__
     GLB_InitSystem(RAP_GetPath(), 6, 0);
 #elif __ARM__

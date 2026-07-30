@@ -256,10 +256,10 @@ WritePrivateProfileString(
         fseek(fptr, delta, SEEK_END);
         pos1 = ftell(fptr);
         
-        #if defined (_MSC_VER) && !defined (XBOX)
+        #if defined(_MSC_VER) && !defined(XBOX)
         chsize(fileno(fptr), pos1);
         #endif
-        #ifdef __GNUC__
+        #if defined(__GNUC__) && !defined(__PSP__)
         ftruncate(fileno(fptr), pos1);
         #endif
     }

@@ -1,0 +1,119 @@
+# PSPSDK Makefile for Raptor: Call of the Shadows (Enhanced)
+#
+# This is a standard PSPSDK Makefile using build.mak -- deliberately NOT
+# the project's CMakeLists.txt. PSPSDK's own toolchain (psp-gcc/psp-g++)
+# is most naturally driven by make + build.mak, the convention used by
+# every PSPSDK sample, rather than folding PSP into the shared CMake build.
+#
+# One-time prerequisite: SDL2 itself still needs to be built/installed for
+# PSP, and upstream SDL2 only ships a CMake toolchain file for that step
+# (see include/SDL2-devel-*/docs/README-psp.md in this repo). That's a
+# one-off library build though -- this Makefile is what builds Raptor
+# itself against the already-installed SDL2.
+#
+# Usage:
+#   psp-config --pspsdk-path      # sanity check PSPSDK is on PATH
+#   make                          # produces EBOOT.PBP
+
+TARGET = raptor
+
+RAPTOR_OBJS = src/tile.o \
+       src/gssapi.o \
+       src/objects.o \
+       src/tile_a.o \
+       src/windows.o \
+       src/flame.o \
+       src/i_lastscr.o \
+       src/joyapi.o \
+       src/kbdapi.o \
+       src/glbapi.o \
+       src/i_video.o \
+       src/musapi.o \
+       src/movie_a.o \
+       src/ptrapi_a.o \
+       src/swdapi.o \
+       src/imsapi.o \
+       src/store.o \
+       src/i_oplmusic.o \
+       src/bonus.o \
+       src/anims.o \
+       src/shadow.o \
+       src/movie.o \
+       src/m_misc.o \
+       src/shots.o \
+       src/opl3.o \
+       src/dbopl.o \
+       src/opl_core.o \
+       src/eshot.o \
+       src/gfxapi_a.o \
+       src/dspapi.o \
+       src/vmemapi.o \
+       src/rap.o \
+       src/demo.o \
+       src/prefapi.o \
+       src/gfxapi.o \
+       src/intro.o \
+       src/help.o \
+       src/input.o \
+       src/fx.o \
+       src/ptrapi.o \
+       src/loadsave.o \
+       src/enemy.o \
+       src/mpuwinmm.o \
+       src/mputsf.o \
+       src/mpualsa.o \
+       src/mpucorea.o \
+       src/mpucorem.o
+
+TEXTSCREEN_OBJS = include/textscreen/include/txt_button.o \
+       include/textscreen/include/txt_checkbox.o \
+       include/textscreen/include/txt_conditional.o \
+       include/textscreen/include/txt_desktop.o \
+       include/textscreen/include/txt_dropdown.o \
+       include/textscreen/include/txt_fileselect.o \
+       include/textscreen/include/txt_gui.o \
+       include/textscreen/include/txt_inputbox.o \
+       include/textscreen/include/txt_io.o \
+       include/textscreen/include/txt_label.o \
+       include/textscreen/include/txt_radiobutton.o \
+       include/textscreen/include/txt_scrollpane.o \
+       include/textscreen/include/txt_sdl.o \
+       include/textscreen/include/txt_separator.o \
+       include/textscreen/include/txt_spinctrl.o \
+       include/textscreen/include/txt_strut.o \
+       include/textscreen/include/txt_table.o \
+       include/textscreen/include/txt_utf8.o \
+       include/textscreen/include/txt_widget.o \
+       include/textscreen/include/txt_window.o \
+       include/textscreen/include/txt_window_action.o
+
+OBJS = $(RAPTOR_OBJS) $(TEXTSCREEN_OBJS)
+
+INCDIR = . include include/textscreen/include include/TinySoundFont
+CFLAGS = -g -Wall -D__PSP__ -DPSP -DNOCURSOR -DSBAUDIORATE -DOPL2 -DOPL_NO_NUKED
+CXXFLAGS = $(CFLAGS) -fno-rtti -std=gnu++17
+ASFLAGS = $(CFLAGS)
+
+LIBDIR =
+# SDL2main must be listed before SDL2 -- on PSP it's what supplies module
+# info, GU/GPU bring-up, and the exit-callback thread ahead of your main().
+LIBS = -lSDL2main -lSDL2 -lpspgu -lpspaudio -lpspctrl -lpsphprm \
+       -lGL -lGLU -lpspdisplay -lpspvram -lpspvfpu -lm -lstdc++
+
+# NOT built as a relocatable PRX -- BUILD_PRX=1 requires position-independent
+# code and proper export tables, which this codebase (a large SDL2 port, not
+# a loadable plugin) was never written for. Leaving it on produces an ELF
+# with incomplete/malformed relocation data, which is what PPSSPP's loader
+# is choking on ("Trying to relocate non-loaded section"). A plain
+# non-relocatable user ELF is what basically every standalone PSP homebrew
+# game actually wants -- BUILD_PRX is really for plugins / old kernel-exploit
+# compatibility on 1.00 firmware.
+PSP_FW_VERSION = 660
+
+PSP_EBOOT_TITLE = Raptor: Call of the Shadows
+EXTRA_TARGETS = EBOOT.PBP
+
+PSPSDK = $(shell psp-config --pspsdk-path)
+PSPBIN = $(PSPSDK)/../bin
+
+include $(PSPSDK)/lib/build.mak

@@ -396,7 +396,7 @@ GLB_UseVM(
 	void
 )
 {
-	#ifdef __ARM__
+	#if defined(__ARM__) || defined(__PSP__)
 	fVmem = 0;
 	#else
 	fVmem = 1;

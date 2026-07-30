@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined (__3DS__) || defined (__SWITCH__)
+#if defined (__3DS__) || defined (__SWITCH__) || defined(__PSP__)
 #include "SDL2/SDL_endian.h"
 #else
 #include "SDL_endian.h"

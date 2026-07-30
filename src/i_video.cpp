@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <cstring>
 #include <climits>
-#if defined (__3DS__) || defined (__SWITCH__)
+#if defined (__3DS__) || defined (__SWITCH__) || defined(__PSP__)
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_opengl.h"
 #else
@@ -122,6 +122,9 @@ int window_height = 720;
 #elif XBOX
 int window_width = 640;
 int window_height = 480;
+#elif __PSP__
+int window_width = 480;
+int window_height = 200;
 #else
 int window_width = 800;
 int window_height = 600;
@@ -242,6 +245,14 @@ void VIDEO_LoadPrefs(void)
         fullscreen = 1;
         aspect_ratio_correct = 0;
         txt_fullscreen = 0;
+        // both default OFF and are deliberately not written to SETUP.INI: the
+	    // enhancements stay dormant until a later patch documents the keys
+        widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
+	    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 0);
+    #elif __PSP__
+        fullscreen = 1;
+        aspect_ratio_correct = 0;
+        txt_fullscreen = 1;
         // both default OFF and are deliberately not written to SETUP.INI: the
 	    // enhancements stay dormant until a later patch documents the keys
         widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
@@ -905,8 +916,13 @@ void I_FinishUpdate (void)
     // Render this intermediate texture into the upscaled texture
     // using "nearest" integer scaling.
 
+    #ifdef __PSP__
+    SDL_SetRenderTarget(renderer, texture);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    #else
     SDL_SetRenderTarget(renderer, texture_upscaled);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
+    
 
     // Finally, render this upscaled texture to screen using linear scaling.
 
@@ -923,6 +939,7 @@ void I_FinishUpdate (void)
     }
 
     SDL_RenderCopy(renderer, texture_upscaled, NULL, NULL);
+    #endif
 
     // Draw!
 
@@ -1299,7 +1316,7 @@ static void SetVideoMode(void)
 {
     int w, h;
     int x, y;
-    #if defined (__3DS__)
+    #if defined (__3DS__) || defined(__PSP__)
         long unsigned int rmask, gmask, bmask, amask;
     #else
         unsigned int rmask, gmask, bmask, amask;
@@ -1433,9 +1450,15 @@ static void SetVideoMode(void)
 
     //if (aspect_ratio_correct || integer_scaling)
     //{
+        #ifdef __PSP__
+        SDL_RenderSetLogicalSize(renderer,
+                                 480,
+                                 272);
+        #else
         SDL_RenderSetLogicalSize(renderer,
                                  SCREENWIDTH,
                                  actualheight);
+        #endif
     //}
 
     // Force integer scales for resolution-independent rendering.
