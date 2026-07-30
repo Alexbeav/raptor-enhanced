@@ -253,10 +253,14 @@ void VIDEO_LoadPrefs(void)
         fullscreen = 1;
         aspect_ratio_correct = 0;
         txt_fullscreen = 1;
-        // both default OFF and are deliberately not written to SETUP.INI: the
-	    // enhancements stay dormant until a later patch documents the keys
         widescreen_bezel = INI_GetPreferenceLong("Video", "widescreen_bezel", 0);
-	    g_smooth = INI_GetPreferenceLong("Video", "smooth_motion", 0);
+        // Smooth motion is a build-time choice on PSP: make SMOOTH=0|1
+        // (-DPSP_SMOOTH). rap.cpp clamps it to 2 sub-frames there. Forced
+        // (not INI-read) so stale memory-stick INIs can't flip it.
+        #ifndef PSP_SMOOTH
+        #define PSP_SMOOTH 1
+        #endif
+	    g_smooth = PSP_SMOOTH;
     #else
 	    fullscreen = INI_GetPreferenceLong("Video", "fullscreen", 0);
 	    aspect_ratio_correct = INI_GetPreferenceLong("Video", "aspect_ratio_correct", 1);
@@ -917,7 +921,11 @@ void I_FinishUpdate (void)
     // using "nearest" integer scaling.
 
     #ifdef __PSP__
-    SDL_SetRenderTarget(renderer, texture);
+    // Single-pass on PSP: draw the streaming texture straight to the
+    // backbuffer. (Targeting `texture` itself always failed -- it's
+    // SDL_TEXTUREACCESS_STREAMING, not TARGET -- and only worked because
+    // the failure left the backbuffer as the render target.)
+    SDL_SetRenderTarget(renderer, NULL);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     #else
     SDL_SetRenderTarget(renderer, texture_upscaled);

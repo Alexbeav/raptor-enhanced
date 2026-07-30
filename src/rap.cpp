@@ -2,6 +2,9 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#ifdef __PSP__
+#include <psppower.h>
+#endif
 #if defined (__3DS__) || defined (__SWITCH__) || defined(__PSP__)
 #include "SDL2/SDL.h"
 #else
@@ -126,8 +129,13 @@ void LOG_Init(void)
 {
     char path[1024];
 
+#ifdef __PSP__
+    // No home/pref dir on PSP (cdflag stays 0); cdpath is empty so the log
+    // lands next to EBOOT.PBP, where stdout is invisible without psplink.
+#else
     if (!cdflag)
         return;
+#endif
 
     snprintf(path, sizeof(path), "%sRAPTOR.LOG", cdpath);
     log_file = fopen(path, "w");
@@ -591,10 +599,11 @@ RAP_DisplayStats(
         RAP_DisplayShieldLevel(MAP_RIGHT + 4, shield);
     }
 
-    if (shield <= 0 && !godmode)
+    if (shield <= 0 && !godmode && g_commit)
     {
         // BLOW UP SHIP IF ! IN GOD MODE ===================
-        
+        // (g_commit: spawns/sounds once per logic frame, not per sub-frame)
+
         ANIMS_StartAnim(A_MED_AIR_EXPLO, playerx + (wrand()%32), playery + (wrand()%32));
         ANIMS_StartAnim(A_SMALL_AIR_EXPLO, playerx + (wrand()%32), playery + (wrand()%32));
         
@@ -632,48 +641,48 @@ RAP_DisplayStats(
 
     // IF END OF WAVE FLY SHIP OFF SCREEN ===================
 
-    if (startendwave != -1 && shield > 0)
+    if (startendwave != -1 && shield > 0 && g_commit)
     {
         if (startendwave == END_FLYOFF)
         {
             IPT_PauseControl(1);
             SND_Patch(FX_FLYBY, 127);
         }
-        
+
         if (startendwave < END_FLYOFF)
         {
             x = 0;
-            
+
             if (playerx < 152)
                 x = 8;
             else if (playerx > 168)
                 x = -8;
-            
+
             IPT_FMovePlayer(x, -4);
         }
     }
     
     if (shield <= SHIELD_LOW && !godmode)
     {
-        if (!(gl_cnt % 8))
+        if (!(gl_cnt % 8) && g_commit)
         {
             blinkflag ^= 1;
-            
+
             if (blinkflag)
             {
                 if (damage)
                 {
                     damage--;
-                    
+
                     if ((haptic) && (control == 2))
                     {
-                        IPT_CalJoyRumbleHigh();                                                                   
+                        IPT_CalJoyRumbleHigh();
                     }
                 }
             }
         }
-        
-        if (shield < g_oldshield && super < 1)
+
+        if (shield < g_oldshield && super < 1 && g_commit)
         {
             if (OBJS_LoseObj())
             {
@@ -681,7 +690,7 @@ RAP_DisplayStats(
                 damage = 2;
             }
         }
-        
+
         if (blinkflag)
         {
             if (damage)
@@ -690,17 +699,20 @@ RAP_DisplayStats(
                 h = (GFX_PIC*)pic;
                 GFX_PutSprite(pic, (320 - LE_LONG(h->width)) >> 1, MAP_BOTTOM - 9);
             }
-            
-            if (startendwave == -1)
+
+            if (startendwave == -1 && g_commit)
                 SND_Patch(FX_WARNING, 127);
-            
+
             pic = GLB_GetItem(FILE110_SHLDLOW_PIC);
             h = (GFX_PIC*)pic;
             GFX_PutSprite(pic, (320 - LE_LONG(h->width)) >> 1, MAP_BOTTOM);
         }
     }
-    
-    g_oldshield = shield;
+
+    // Assign only when committing: the shield-loss check above compares
+    // against the previous logic frame, not the previous sub-frame.
+    if (g_commit)
+        g_oldshield = shield;
     
     OBJS_DisplayStats();
     
@@ -1128,7 +1140,13 @@ Do_Game(
         // advances once per 3 ticks (game speed unchanged); only presentation
         // is finer. steps==1 reproduces the original single-present behaviour.
         {
+            // PSP: 3 full redraws+presents per 35 Hz tick exceeds the tick
+            // budget on real hardware (plays in slow motion); 2 fits.
+            #ifdef __PSP__
+            int steps = g_smooth ? 2 : 1;
+            #else
             int steps = g_smooth ? 3 : 1;
+            #endif
             int sub;
 
             for (sub = 1; sub <= steps; sub++)
@@ -1382,6 +1400,12 @@ main(
     sys_init();
     #endif
 
+    #ifdef __PSP__
+    // 333 MHz (default is 222): headroom for OPL mixing in the audio thread
+    // plus the 3 interpolated sub-frame presents of smooth-motion mode.
+    scePowerSetClockFrequency(333, 333, 166);
+    #endif
+
     InitScreen();
 
     RAP_InitLoadSave();
@@ -1625,7 +1649,7 @@ main(
         printf("PTR_Init()-Joystick\n");
         fflush(stdout);
         ptrflag = PTR_Init(P_JOYSTICK);
-        if (joy_ipt_MenuNew)
+        if (joy_menu_keys)
             usekb_flag = 1;
         else
             usekb_flag = 0;

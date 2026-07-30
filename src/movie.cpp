@@ -54,7 +54,9 @@ MOVIE_Play(
     char fill;
     char *pic;
     FRAME *curfld;
-    
+
+    LOG_Printf("MOVIE_Play: first item 0x%x, numplay %d", frame->item, numplay);
+
     memset(displaybuffer, 0, 64000);
     
     curfld = frame;

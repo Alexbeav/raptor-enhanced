@@ -90,7 +90,22 @@ TEXTSCREEN_OBJS = include/textscreen/include/txt_button.o \
 OBJS = $(RAPTOR_OBJS) $(TEXTSCREEN_OBJS)
 
 INCDIR = . include include/textscreen/include include/TinySoundFont
-CFLAGS = -g -Wall -D__PSP__ -DPSP -DNOCURSOR -DSBAUDIORATE -DOPL2 -DOPL_NO_NUKED
+# Note: -DNOCURSOR removed -- nothing in this tree references it. The hangar
+# cursor is controlled by the __PSP__ paths in ptrapi.cpp/input.cpp instead
+# (joystick-pointer mode: analog nub moves the drawn cursor, Cross clicks).
+#
+# -O2 -G0: PSPSDK convention. Without -O2 the sprite compositing and the
+# OPL FM synth (audio thread) run several times slower than needed -- on a
+# 333 MHz MIPS that's the difference between full speed and slowdown.
+# -fno-strict-aliasing: the codebase overlays structs on char buffers
+# everywhere; don't let the optimizer assume they never alias.
+#
+# SMOOTH=1 (default) interpolates 2 presentation sub-frames per logic tick;
+# SMOOTH=0 builds the classic single-present version (steadier on High
+# detail). Build both: make SMOOTH=1 && mv EBOOT.PBP ...; make clean etc.
+SMOOTH ?= 1
+CFLAGS = -O2 -G0 -fno-strict-aliasing -Wall -D__PSP__ -DPSP -DPSP_SMOOTH=$(SMOOTH) \
+         -DSBAUDIORATE -DOPL2 -DOPL_NO_NUKED
 CXXFLAGS = $(CFLAGS) -fno-rtti -std=gnu++17
 ASFLAGS = $(CFLAGS)
 
@@ -98,7 +113,7 @@ LIBDIR =
 # SDL2main must be listed before SDL2 -- on PSP it's what supplies module
 # info, GU/GPU bring-up, and the exit-callback thread ahead of your main().
 LIBS = -lSDL2main -lSDL2 -lpspgu -lpspaudio -lpspctrl -lpsphprm \
-       -lGL -lGLU -lpspdisplay -lpspvram -lpspvfpu -lm -lstdc++
+       -lGL -lGLU -lpspdisplay -lpspvram -lpspvfpu -lpsppower -lm -lstdc++
 
 # NOT built as a relocatable PRX -- BUILD_PRX=1 requires position-independent
 # code and proper export tables, which this codebase (a large SDL2 port, not
@@ -111,6 +126,10 @@ LIBS = -lSDL2main -lSDL2 -lpspgu -lpspaudio -lpspctrl -lpsphprm \
 PSP_FW_VERSION = 660
 
 PSP_EBOOT_TITLE = Raptor: Call of the Shadows
+# XMB art: ICON0 (144x80, from rsrc/raptorpspbanner.png) and PIC1 (480x272
+# background, composed from the game's RAPLOG_PIC + BACKGRND_PIC art).
+PSP_EBOOT_ICON = rsrc/ICON0.PNG
+PSP_EBOOT_PIC1 = rsrc/PIC1.PNG
 EXTRA_TARGETS = EBOOT.PBP
 
 PSPSDK = $(shell psp-config --pspsdk-path)

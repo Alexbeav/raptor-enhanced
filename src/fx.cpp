@@ -103,7 +103,10 @@ SND_InitSound(
         return 0;
 
     if (SDL_Init(SDL_INIT_AUDIO) < 0)
+    {
+        LOG_Printf("SND_InitSound: SDL_Init(AUDIO) failed: %s", SDL_GetError());
         return 0;
+    }
 
     spec.freq = fx_freq;
     spec.format = AUDIO_S16SYS;
@@ -114,15 +117,33 @@ SND_InitSound(
 
     if ((fx_dev = SDL_OpenAudioDevice(NULL, 0, &spec, &actual, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE)) == 0)
     {
-        SDL_QuitSubSystem(SDL_INIT_AUDIO);
-        return 0;
+        LOG_Printf("SND_InitSound: open at %d Hz failed: %s", spec.freq, SDL_GetError());
+
+        #ifdef __PSP__
+        // PSP: rates other than 44100 go through the sceAudioSRC channel in
+        // SDL's backend; 44100 uses the plain hardware channel, which real
+        // hardware always accepts. Retry there before giving up on sound.
+        spec.freq = 44100;
+        fx_dev = SDL_OpenAudioDevice(NULL, 0, &spec, &actual, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+        #endif
+
+        if (fx_dev == 0)
+        {
+            LOG_Printf("SND_InitSound: open at 44100 Hz failed: %s", SDL_GetError());
+            SDL_QuitSubSystem(SDL_INIT_AUDIO);
+            return 0;
+        }
     }
 
     fx_freq = actual.freq;
-    
+
+    LOG_Printf("SND_InitSound: audio open: %d Hz, %d ch, fmt 0x%x, %d samples",
+        actual.freq, actual.channels, actual.format, actual.samples);
+
     if (actual.format != AUDIO_S16SYS || actual.channels != 2)
     {
-        SDL_CloseAudio();
+        LOG_Printf("SND_InitSound: unusable format/channels, disabling sound");
+        SDL_CloseAudioDevice(fx_dev);
         SDL_QuitSubSystem(SDL_INIT_AUDIO);
         return 0;
     }
@@ -131,7 +152,9 @@ SND_InitSound(
     fx_device = SND_NONE;
 
     music_volume = INI_GetPreferenceLong("Music", "Volume", 127);
-    #if defined (__3DS__) || defined (__SWITCH__) || defined (XBOX)
+    #if defined (__3DS__) || defined (__SWITCH__) || defined (XBOX) || defined (__PSP__)
+    // Console ports have exactly one sensible card; never trust SETUP.INI for
+    // this (a stale/missing INI reads back CardType 0 = silence).
     music_card = M_SB;
     #else
     music_card = INI_GetPreferenceLong("Music", "CardType", M_NONE);
@@ -158,6 +181,8 @@ SND_InitSound(
     }
 
     printf("Music Enabled (%s)\n", cards[music_card]);
+    LOG_Printf("SND_InitSound: music card %d (%s), volume %d",
+        music_card, cards[music_card], music_volume);
     
     if (music_card != M_NONE)                               
     {
@@ -166,7 +191,7 @@ SND_InitSound(
     }
 
     fx_volume = INI_GetPreferenceLong("SoundFX", "Volume", 127);
-    #if defined (__3DS__) || defined (__SWITCH__) || defined (XBOX)
+    #if defined (__3DS__) || defined (__SWITCH__) || defined (XBOX) || defined (__PSP__)
         fx_card = 5;
         fx_chans = 2;
     #else
@@ -213,6 +238,8 @@ SND_InitSound(
     }
 
     printf("SoundFx Enabled (%s)\n", cards[fx_card]);
+    LOG_Printf("SND_InitSound: fx card %d (%s), volume %d, channels %d",
+        fx_card, cards[fx_card], fx_volume, fx_chans);
 
     if (fx_chans < 1 || fx_chans > 8)
         fx_chans = 2;
