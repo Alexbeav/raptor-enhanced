@@ -24,7 +24,16 @@ typedef enum
     S_STOP
 }SONGOPTS;
 
-typedef struct 
+// ANIM data streams place ANIMLINE records at odd offsets (the frame's fill
+// byte shifts everything by 1, and each record is followed by an arbitrary
+// byte-length run). packed makes GCC emit unaligned-safe loads; the PSP's
+// Allegrex CPU raises an address-error exception on misaligned 16/32-bit
+// access, unlike x86/ARM/PPSSPP which tolerate it.
+#if defined(__PSP__)
+typedef struct __attribute__((packed))
+#else
+typedef struct
+#endif
 {
     unsigned short opt;
     unsigned short fill;

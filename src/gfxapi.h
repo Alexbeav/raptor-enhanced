@@ -34,7 +34,16 @@ typedef enum
 #define CLIP_YTOP      8
 #define CLIP_YBOTTOM   16
 
+// Sprite walkers (GFX_DrawSprite/GFX_ShadeSprite/GFX_ShadeShape/SHADOW_Draw)
+// advance these headers through the data by arbitrary byte-length runs, so
+// they land on unaligned addresses. packed makes GCC emit unaligned-safe
+// loads on PSP, whose MIPS core faults on misaligned 16/32-bit access,
+// unlike x86/ARM/PPSSPP which tolerate it.
+#if defined (__PSP__)
+typedef struct __attribute__((packed))
+#else
 typedef struct
+#endif
 {
     GFX_TYPE type;          // type of picture
     int opt1;               // option 1
