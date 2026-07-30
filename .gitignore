@@ -28,3 +28,8 @@ linux-smoketest.sh
 *.3ds
 rsrc/romfs
 rsrc/RomFS Builder.exe
+*.xbe
+*.d
+*.obj
+*.iso
+*.exe

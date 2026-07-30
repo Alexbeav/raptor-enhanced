@@ -157,7 +157,7 @@ int vga_porch_flash = false;
 // Force software rendering, for systems which lack effective hardware
 // acceleration
 
-#ifdef XBOX
+#ifdef XBOX_OLD
 int force_software_renderer = true;
 #else
 int force_software_renderer = false;

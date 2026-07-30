@@ -1102,7 +1102,7 @@ RAP_InitLoadSave(
     void
 )
 {
-#if _WIN32 || __linux__ || __APPLE__
+#if (defined(_WIN32) && !defined(XBOX)) || __linux__ || __APPLE__
     char* gethome;
 
     #if __ANDROID__

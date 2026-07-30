@@ -1300,7 +1300,7 @@ int I_OPL_InitMusic(int dummy)
         dmxoption = snd_dmxoption != NULL ? snd_dmxoption : "";
     }*/
 
-    #ifdef OPL2
+    #if defined(OPL2) || defined(XBOX)
     opl_opl3mode = 0;
     num_opl_voices = OPL_NUM_VOICES;
     #else

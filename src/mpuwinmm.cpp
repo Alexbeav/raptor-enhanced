@@ -1,4 +1,4 @@
-#ifdef _WIN32 && !defined (XBOX)
+#if defined (_WIN32) && !defined (XBOX)
 #include <windows.h>
 #include <mmsystem.h>
 
