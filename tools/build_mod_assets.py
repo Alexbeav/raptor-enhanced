@@ -48,11 +48,18 @@ def sfield(*, opt, fid, x, y, lx, ly, txtoff, name="", font="FONT1_FNT",
     )
 
 
+FLD_BUMPIN = 7
+
+
 def build_modmenu():
-    """The MODS popup: close gadget, title, MODS_ROWS toggle rows, footer.
-    Row labels are rewritten at runtime via SWD_SetFieldText, so the text
-    area reserves a fixed-size slot per row."""
+    """The MODS popup, styled after the shipped OPTS_SWD conventions:
+    FONT1 title, FONT2 body text, an inset bumpin panel framing the rows,
+    window color 1. Row labels are rewritten at runtime via
+    SWD_SetFieldText, so the text area reserves a fixed-size slot per row.
+    Field INDEXES must stay in sync with winids.h: 0 close, 1 title,
+    2..2+MODS_ROWS-1 rows, then footer."""
     ROW_CHARS = 36
+    ROW_H = 12
     fields = []
     labels = []
 
@@ -60,13 +67,23 @@ def build_modmenu():
         labels.append((label_text, reserve or len(label_text) + 1))
         fields.append(dict(kw))
 
-    add("", 2, opt=FLD_CLOSE, fid=0, x=4, y=4, lx=12, ly=12, color=24, lite=15)
-    add("MOD FILES", opt=FLD_TEXT, fid=1, x=70, y=8, lx=100, ly=10, maxchars=10, basecolor=82)
+    panel_ly = MODS_ROWS * ROW_H + 8
+    ly = 27 + panel_ly + 18
+
+    # fields draw in index order, so the inset panel comes before the rows;
+    # winids.h MODM_* indexes mirror this layout exactly
+    add("", 2, opt=FLD_CLOSE, fid=0, x=4, y=4, lx=12, ly=12, color=8, lite=15)
+    add("MOD FILES", opt=FLD_TEXT, fid=1, x=58, y=7, lx=84, ly=14,
+        maxchars=10, font="FONT1_FNT", basecolor=82)
+    add("", 2, opt=FLD_BUMPIN, fid=2, x=5, y=27, lx=190,
+        ly=panel_ly, color=1, lite=15)
     for i in range(MODS_ROWS):
-        add("", ROW_CHARS + 1, opt=FLD_BUTTON, fid=2 + i, x=12, y=26 + i * 13,
-            lx=196, ly=12, maxchars=ROW_CHARS, picflag=INVISABLE, selectable=1, basecolor=82)
-    add("CHANGES APPLY AFTER RESTART", opt=FLD_TEXT, fid=2 + MODS_ROWS,
-        x=26, y=32 + MODS_ROWS * 13, lx=180, ly=10, maxchars=28, basecolor=79)
+        add("", ROW_CHARS + 1, opt=FLD_BUTTON, fid=3 + i, x=10, y=31 + i * ROW_H,
+            lx=180, ly=ROW_H, maxchars=ROW_CHARS, picflag=INVISABLE,
+            selectable=1, font="FONT2_FNT", basecolor=82)
+    add("CHANGES APPLY AFTER RESTART", opt=FLD_TEXT, fid=3 + MODS_ROWS,
+        x=10, y=31 + panel_ly + 4, lx=180, ly=8, maxchars=28,
+        font="FONT2_FNT", basecolor=48)
 
     n = len(fields)
     txtofs = 120 + n * 148
@@ -78,8 +95,8 @@ def build_modmenu():
         slot[:len(label_text)] = label_text.encode()
         text += slot
 
-    out = swin("MODMENU", x=50, y=20, lx=220, ly=52 + MODS_ROWS * 13,
-               color=24, numflds=n, txtofs=txtofs, firstfld=2)
+    out = swin("MODMENU", x=60, y=22, lx=200, ly=ly,
+               color=1, numflds=n, txtofs=txtofs, firstfld=3)
     for f in fields:
         out += sfield(**f)
     return bytes(out + text)

@@ -64,6 +64,13 @@ selected instead - set, under [Music]:
 Both options can also be toggled in raptorsetup.exe under
 "Additional Features".
 
+MODS: copy the included "mods" folder (and rapmenu.glb) next to
+raptor.exe, then use the MODS entry on the main menu (or press M) to
+toggle mod files on and off. Two examples are included: Night Ops
+(night-camo Raptor on every mission) and Demo Cursor (custom menu
+cursor). Making your own is easy - see MODDING.md in the source
+repository.
+
 A ready-made SETUP.INI (fullscreen, sensible defaults) is included in
 this package. Copy it into your Raptor folder ONLY if you have not
 already configured your own - it would replace your sound and control

@@ -42,6 +42,10 @@ configurable in Raptor Setup under **Additional Features** or in `SETUP.INI`:
   logic still runs at the original 35 Hz, but sprite and scroll positions
   are interpolated for fluid 70 Hz motion. Set `smooth_motion=0` for the
   original presentation.
+- **Mod support**: drop `.glb` mod files into a `mods\` folder and toggle
+  them from the main menu's **MODS** entry — art replacement, new items,
+  and zero-data alias mods. See [MODDING.md](MODDING.md); two example mods
+  ship in the release package.
 - **Selectable OPL music emulator** (`[Music] OplEmu=0`, Nuked by default):
   music is synthesized with the cycle-accurate
   [Nuked OPL3](https://github.com/nukeykt/Nuked-OPL3) core. `OplEmu=1`

@@ -119,7 +119,8 @@
 
 #define MODM_CLOSE 0x0000    // CLOSE GADGET
 #define MODM_TITLE 0x0001    // TEXT FIELD
-#define MODM_ROW0 0x0002     // BUTTON FIELDs ( MOD_MAX rows )
+#define MODM_PANEL 0x0002    // BUMPIN ( inset panel behind the rows )
+#define MODM_ROW0 0x0003     // BUTTON FIELDs ( MOD_MAX rows )
 #define MODM_FOOT ( MODM_ROW0 + MOD_MAX ) // TEXT FIELD
 
 // HANGAR defines

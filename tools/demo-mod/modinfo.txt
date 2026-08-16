@@ -1,0 +1,2 @@
+Demo Cursor
+Example image mod: replaces the menu cursor with a targeting reticle.
