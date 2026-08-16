@@ -1045,7 +1045,10 @@ GLB_MountPath(
 #endif
 		num = (int)LE_ULONG(key.offset);
 
-		if (num <= 0 || (long)((num + 1) * sizeof(KEYFILE)) > filesize)
+		// item numbers are 16 bits in a handle; do all bounds math in
+		// uint64_t so crafted counts cannot wrap 32-bit arithmetic
+		if (num <= 0 || num > 0xFFFF ||
+			((uint64_t)num + 1) * sizeof(KEYFILE) > (uint64_t)filesize)
 		{
 			fclose(fd->handle);
 			memset(fd, 0, sizeof(FILEDESC));
@@ -1061,10 +1064,11 @@ GLB_MountPath(
 
 		GLB_LoadIDT(fd);
 
-		// item payloads must lie inside the file
+		// item payloads must lie inside the file (uint64_t: offset + size
+		// can wrap 32-bit long on Windows)
 		for (int i = 0; i < num; i++)
 		{
-			if ((long)fd->item[i].offset + (long)fd->item[i].size > filesize)
+			if ((uint64_t)fd->item[i].offset + (uint64_t)fd->item[i].size > (uint64_t)filesize)
 			{
 				free(fd->item);
 				fclose(fd->handle);
