@@ -126,10 +126,11 @@ def main():
     ).encode()))
     hose.items.append(GlbItem(0, "PLAYRGUN_TXT", (
         "RATE 1\n"
+        "DAMAGE 2\n"
         "MUZZLE 0 0\n"
     ).encode()))
     (mods / "BulletHose.glb").write_bytes(hose.build())
-    print("mods/BulletHose.glb: gun-config demo (RATE 1, one muzzle)")
+    print("mods/BulletHose.glb: gun-config demo (RATE 1, DAMAGE 2, one muzzle)")
 
 
 if __name__ == "__main__":

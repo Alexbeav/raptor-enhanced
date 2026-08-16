@@ -54,15 +54,16 @@ cannon (the machine gun, not the special weapons):
 
 ```
 RATE 1
+DAMAGE 2
 MUZZLE -6 0
 MUZZLE 6 0
 ```
 
-`RATE` is ticks between volleys (stock: 2, lower = faster). Each
-`MUZZLE x y` line (up to 8) adds a barrel at that offset from the
-player's center. The shipped `BulletHose.glb` is a worked example: one
-centered barrel at maximum cyclic rate. Changes hot-apply with the mod
-toggle.
+`RATE` is ticks between volleys (stock: 2, lower = faster). `DAMAGE` is
+per-shot damage (stock: 1). Each `MUZZLE x y` line (up to 8) adds a
+barrel at that offset from the player's center. The shipped
+`BulletHose.glb` is a worked example: one centered barrel, maximum
+cyclic rate, double damage. Changes hot-apply with the mod toggle.
 
 ## Ground rules
 

@@ -122,6 +122,7 @@ Moddable player cannon: a mod may provide a PLAYRGUN_TXT item that
 replaces the standard forward guns' muzzle layout and fire cadence:
 
     RATE 1            ticks between volleys ( stock: 2 )
+    DAMAGE 2          per-shot damage ( stock: 1 )
     MUZZLE 0 0        up to 8 lines: x and y offset from the player center
 
 Loaded at startup and again whenever the mod set hot-applies. Without
@@ -134,10 +135,13 @@ static struct
 {
     int active;
     int rate;
+    int damage;
     int count;
     int mx[MAX_MUZZLES];
     int my[MAX_MUZZLES];
 } playrgun;
+
+#define STOCK_FORWARD_HITS 1     // shot_lib[S_FORWARD_GUNS].hits in SHOTS_Init
 
 void
 SHOTS_LoadGunConfig(
@@ -146,13 +150,19 @@ SHOTS_LoadGunConfig(
 {
     char line[64];
     char *data;
-    int item, size, pos, len, dx, dy, rate;
-    
+    int item, size, pos, len, dx, dy, rate, damage;
+
     memset(&playrgun, 0, sizeof(playrgun));
     playrgun.rate = 2;
-    
+    playrgun.damage = STOCK_FORWARD_HITS;
+
+    // damage lives in the shared shot lib (collision code reads
+    // lib->hits), so restore stock here in case a config was active
+    // before this reload and is now gone or disabled
+    shot_lib[S_FORWARD_GUNS].hits = STOCK_FORWARD_HITS;
+
     item = GLB_GetItemID("PLAYRGUN_TXT");
-    
+
     if (item == -1)
         return;
     
@@ -182,6 +192,14 @@ SHOTS_LoadGunConfig(
                 rate = 35;
             playrgun.rate = rate;
         }
+        else if (sscanf(line, "DAMAGE %d", &damage) == 1)
+        {
+            if (damage < 1)
+                damage = 1;
+            if (damage > 50)
+                damage = 50;
+            playrgun.damage = damage;
+        }
         else if (sscanf(line, "MUZZLE %d %d", &dx, &dy) == 2 &&
                  playrgun.count < MAX_MUZZLES)
         {
@@ -200,8 +218,9 @@ SHOTS_LoadGunConfig(
     if (playrgun.count)
     {
         playrgun.active = 1;
-        LOG_Printf("player gun config: %d muzzle(s), rate %d",
-            playrgun.count, playrgun.rate);
+        shot_lib[S_FORWARD_GUNS].hits = playrgun.damage;
+        LOG_Printf("player gun config: %d muzzle(s), rate %d, damage %d",
+            playrgun.count, playrgun.rate, playrgun.damage);
     }
 }
 
