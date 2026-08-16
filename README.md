@@ -45,9 +45,9 @@ configurable in Raptor Setup under **Additional Features** or in `SETUP.INI`:
 - **Mod support**: drop `.glb` mod files into a `mods\` folder and toggle
   them from the main menu's **MODS** entry — art and sound replacement,
   new items, zero-data alias mods, and player airframe configs (guns,
-  speed, armor, exhausts). See [MODDING.md](MODDING.md); four example
-  mods ship in the release package, headlined by a fully playable
-  **A-10 Thunderbolt** (`tools/a10-mod` is its buildable source).
+  speed, armor, exhausts). See [MODDING.md](MODDING.md); three example
+  mods ship in the release package, and `tools/demo-mod` is a buildable
+  example source folder.
 - **Selectable OPL music emulator** (`[Music] OplEmu=0`, Nuked by default):
   music is synthesized with the cycle-accurate
   [Nuked OPL3](https://github.com/nukeykt/Nuked-OPL3) core. `OplEmu=1`

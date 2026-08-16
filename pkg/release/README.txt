@@ -67,13 +67,12 @@ Both options can also be toggled in raptorsetup.exe under
 MODS: copy the included "mods" folder (and rapmenu.glb) next to
 raptor.exe, then use the MODS entry on the main menu (or press M) to
 toggle mod files on and off. Included examples:
-  A-10 Thunderbolt - fly the Warthog: slower, tankier, and a nose
-      cannon that goes BRRRT (conflicts with Night Ops/Bullet Hose;
-      enabling it switches those off automatically)
   Night Ops - the night-camo Raptor on every mission
-  Bullet Hose - stock Raptor, single max-rate cannon
+  Bullet Hose - a single max-rate center cannon
   Demo Cursor - custom menu cursor (image-replacement example)
-Making your own is easy - see MODDING.md in the source repository.
+Mods that change the same things conflict; enabling one switches the
+other off automatically. Making your own is easy - see MODDING.md in
+the source repository.
 
 A ready-made SETUP.INI (fullscreen, sensible defaults) is included in
 this package. Copy it into your Raptor folder ONLY if you have not
