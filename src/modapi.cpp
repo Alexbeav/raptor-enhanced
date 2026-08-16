@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -36,7 +37,7 @@ struct ModEntry
     std::string path;
     std::vector<std::pair<std::string, std::string>> aliases;
     int enabled;
-    int filenum;           // -1 until mounted (lazy for disabled mods)
+    int filenum;           // -1 only if the mount failed at startup
 };
 
 static std::vector<ModEntry> mod_list;
@@ -44,6 +45,7 @@ static std::vector<std::pair<int, int>> overrides;  // base handle -> new handle
 static int base_files;
 static int menu_available;
 static int pending_changes;
+static int override_generation;
 
 // ---------------------------------------------------------------------------
 // base-data occurrence lookups
@@ -234,7 +236,8 @@ void MOD_Startup(void)
     for (const auto& e : fs::directory_iterator(mods_dir, ec))
     {
         std::string ext = e.path().extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        for (auto& c : ext)
+            c = (char)std::tolower((unsigned char)c);
 
         if (ext == ".glb")
             found.push_back(e.path());
@@ -253,10 +256,20 @@ void MOD_Startup(void)
 
         INI_PutPreferenceLong("Mods", mod.stem.c_str(), mod.enabled);
 
-        if ((int)mod_list.size() < MOD_MAX)
-            mod_list.push_back(mod);
-        else
+        if ((int)mod_list.size() >= MOD_MAX)
+        {
             LOG_Printf("mod %s: ignored (limit %d)", mod.stem.c_str(), MOD_MAX);
+            continue;
+        }
+
+        mod.filenum = GLB_MountPath(mod.path.c_str());
+
+        if (mod.filenum == -1)
+            LOG_Printf("mod %s: mount failed, skipping", mod.stem.c_str());
+        else
+            ParseManifest(mod);
+
+        mod_list.push_back(mod);
     }
 
     MOD_ApplyPending();
@@ -275,24 +288,10 @@ void MOD_ApplyPending(void)
 {
     pending_changes = 0;
     overrides.clear();
+    override_generation++;
 
     for (auto& mod : mod_list)
     {
-        if (mod.enabled && mod.filenum == -1)
-        {
-            mod.filenum = GLB_MountPath(mod.path.c_str());
-
-            if (mod.filenum == -1)
-            {
-                LOG_Printf("mod %s: mount failed", mod.stem.c_str());
-                mod.enabled = 0;
-                INI_PutPreferenceLong("Mods", mod.stem.c_str(), 0);
-                continue;
-            }
-
-            ParseManifest(mod);
-        }
-
         if (mod.filenum != -1)
         {
             GLB_SetFileEnabled(mod.filenum, mod.enabled);
@@ -324,8 +323,9 @@ int MOD_PendingChanges(void)
 
 int MOD_Resolve(int handle)
 {
-    // chains allowed (alias to an item that a later mod overrides), capped
-    for (int depth = 0; depth < 4; depth++)
+    // follow redirect chains (alias to an item another mod overrides); a
+    // chain cannot be longer than the table without a cycle, so bound there
+    for (size_t depth = 0; depth <= overrides.size(); depth++)
     {
         int next = handle;
 
@@ -393,9 +393,19 @@ char* MOD_FilterWindowData(int handle, char* data, int* size)
 {
     static char* cached;
     static int cached_size;
+    static int cached_generation = -1;
 
     if (!menu_available || handle != FILE132_MAIN_SWD)
         return data;
+
+    if (!cached || cached_generation != override_generation)
+    {
+        // a mod may have overridden MAIN_SWD itself since the last build;
+        // the old buffer can still back a live window, so leak it (same
+        // lifetime model as SWD_ReformatFieldData's copies)
+        cached = NULL;
+        cached_generation = override_generation;
+    }
 
     if (!cached)
     {
