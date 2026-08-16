@@ -11,6 +11,11 @@ The folder may contain:
                      same name (or adding a new item if the name is new)
     NAME.2.png       the SECOND base item with that name (multi-frame art
                      like LPLAYER_PIC), .3.png the third, and so on
+    NAME.txt         a raw text item (e.g. PLAYRGUN_TXT gun config)
+    GUN_FX+4.wav     a digitized sound: converted to the game's 8-bit
+                     sample format; the "+4" targets the digital sub-item
+                     four slots after the GUN_FX label (the engine's
+                     SND_DIGITAL offset - use +4 for every *_FX sound)
 
 PNGs are quantized to the game palette (read from FILE0000.GLB in --game,
 default: the current directory); pixels with alpha < 128 are transparent.
@@ -35,6 +40,35 @@ def item_sort_key(path):
     return (name, occurrence)
 
 
+def wav_to_dsp(path):
+    """WAV -> the engine's dsp_t sample: int16 format(3), int16 freq,
+    int32 length, unsigned 8-bit mono PCM. (No audioop: removed in 3.13.)"""
+    import struct
+    import wave
+
+    with wave.open(str(path), "rb") as w:
+        rate = w.getframerate()
+        width = w.getsampwidth()
+        channels = w.getnchannels()
+        frames = w.readframes(w.getnframes())
+
+    if rate > 32767:
+        raise SystemExit(f"{path.name}: sample rate {rate} exceeds the format's int16 field")
+    if width not in (1, 2):
+        raise SystemExit(f"{path.name}: only 8/16-bit PCM WAVs supported")
+
+    if width == 2:
+        ints = struct.unpack(f"<{len(frames) // 2}h", frames)
+    else:
+        ints = [b - 128 << 8 for b in frames]  # centre, widen for the mix
+
+    if channels > 1:
+        ints = [sum(ints[i:i + channels]) // channels for i in range(0, len(ints), channels)]
+
+    pcm = bytes(((s >> 8) + 128) & 0xFF for s in ints)
+    return struct.pack("<hhi", 3, rate, len(pcm)) + pcm
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("folder", type=Path)
@@ -49,10 +83,12 @@ def main():
         sys.exit("Pillow is required: pip install pillow")
 
     pngs = sorted(args.folder.glob("*.png"), key=item_sort_key)
+    wavs = sorted(args.folder.glob("*.wav"), key=item_sort_key)
+    txts = sorted(p for p in args.folder.glob("*.txt") if p.name.lower() != "modinfo.txt")
     manifest = args.folder / "modinfo.txt"
 
-    if not pngs and not manifest.exists():
-        sys.exit(f"{args.folder}: nothing to pack (no *.png, no modinfo.txt)")
+    if not pngs and not wavs and not txts and not manifest.exists():
+        sys.exit(f"{args.folder}: nothing to pack (no *.png/*.wav/*.txt, no modinfo.txt)")
 
     glbs = None
     palette = None
@@ -88,6 +124,21 @@ def main():
         data = encode_pic(img.width, img.height, pixels, mask, gtype)
         mod.items.append(GlbItem(0, name, data))
         print(f"  {name} ({img.width}x{img.height}, {'sprite' if gtype == 0 else 'block'}, occurrence {occurrence})")
+
+    for txt in txts:
+        name = txt.stem.split(".")[0].upper()
+        if len(name) > 15:
+            sys.exit(f"{txt.name}: item name {name} is over 15 characters")
+        mod.items.append(GlbItem(0, name, txt.read_bytes()))
+        print(f"  {name} (text, {txt.stat().st_size} bytes)")
+
+    for wav in wavs:
+        name = wav.stem.split(".")[0].upper()
+        if len(name) > 15:
+            sys.exit(f"{wav.name}: item name {name} is over 15 characters")
+        data = wav_to_dsp(wav)
+        mod.items.append(GlbItem(0, name, data))
+        print(f"  {name} (sound, {len(data) - 8} samples)")
 
     out = args.out or args.folder.with_suffix(".glb")
     out.write_bytes(mod.build())

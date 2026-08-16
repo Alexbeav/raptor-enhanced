@@ -180,6 +180,36 @@ static void BuildItemOverrides(const ModEntry& mod)
         if (!name[0] || !strcmp(name, "MODINFO_TXT"))
             continue;
 
+        // "LABEL+K" targets the (unnamed) item K slots after a label -
+        // that is how sounds (GUN_FX+4 = the digitized sample) and tiles
+        // (STARTG1TILES+K) are addressed, since those items carry no name
+        const char* plus = strchr(name, '+');
+
+        if (plus && plus != name)
+        {
+            char label[16];
+            int off = atoi(plus + 1);
+            int len = (int)(plus - name);
+
+            if (off > 0 && len < (int)sizeof(label))
+            {
+                memcpy(label, name, len);
+                label[len] = 0;
+
+                int base = OccHandle(label, 0);
+
+                if (base != -1 &&
+                    ((base & 0xffff) + off) < GLB_FileItemCount(base >> 16))
+                {
+                    AddOverride(base + off, (mod.filenum << 16) | i);
+                    continue;
+                }
+            }
+
+            LOG_Printf("mod %s: cannot resolve %s", mod.stem.c_str(), name);
+            continue;
+        }
+
         // occurrence of this name so far within THIS mod
         int k = 0;
 

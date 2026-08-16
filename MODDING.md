@@ -47,6 +47,15 @@ format automatically. Requires Python 3.10+ and Pillow. See
 Item names come from the game's data — browse them (and edit maps, art and
 menus) with the [Raptor Map Editor](https://github.com/Alexbeav/raptor-map-editor).
 
+## Sounds and unnamed items
+
+Sound effects live in unnamed items following a `*_FX` label; the
+digitized sample is always **4 slots after the label**. A mod item named
+`GUN_FX+4` therefore replaces the machine-gun sound — `make_mod.py`
+converts a WAV for you (name it `GUN_FX+4.wav`; 8/16-bit mono or stereo,
+any rate up to 32 kHz). The same `LABEL+K` addressing reaches any
+unnamed item, tiles included (`STARTG1TILES+K`).
+
 ## Player gun config
 
 A mod may include a `PLAYRGUN_TXT` item to redefine the standard forward
