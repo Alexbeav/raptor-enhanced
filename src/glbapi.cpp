@@ -1022,24 +1022,58 @@ GLB_MountPath(
 		return -1;
 	}
 
-	num_glbs++;
-	num = GLB_NumItems(filenum);
-
-	if (num <= 0)
+	// Validate the archive ourselves: GLB_NumItems hard-exits on a failed
+	// header read, but a malformed mod file must merely be rejected.
 	{
-		fclose(fd->handle);
-		memset(fd, 0, sizeof(FILEDESC));
-		num_glbs--;
-		return -1;
+		KEYFILE key;
+		long filesize;
+
+		fseek(fd->handle, 0L, SEEK_END);
+		filesize = ftell(fd->handle);
+		fseek(fd->handle, 0L, SEEK_SET);
+
+		if (filesize < (long)sizeof(KEYFILE) ||
+			fread(&key, sizeof(KEYFILE), 1, fd->handle) != 1)
+		{
+			fclose(fd->handle);
+			memset(fd, 0, sizeof(FILEDESC));
+			return -1;
+		}
+
+#ifdef _SCOTTGAME
+		GLB_DeCrypt(serial, (uint8_t*)&key, sizeof(KEYFILE));
+#endif
+		num = (int)LE_ULONG(key.offset);
+
+		if (num <= 0 || (long)((num + 1) * sizeof(KEYFILE)) > filesize)
+		{
+			fclose(fd->handle);
+			memset(fd, 0, sizeof(FILEDESC));
+			return -1;
+		}
+
+		num_glbs++;
+		fd->items = num;
+		fd->item = (ITEMINFO*)calloc(num, sizeof(ITEMINFO));
+
+		if (fd->item == NULL)
+			EXIT_Error("GLB_MountPath: memory");
+
+		GLB_LoadIDT(fd);
+
+		// item payloads must lie inside the file
+		for (int i = 0; i < num; i++)
+		{
+			if ((long)fd->item[i].offset + (long)fd->item[i].size > filesize)
+			{
+				free(fd->item);
+				fclose(fd->handle);
+				memset(fd, 0, sizeof(FILEDESC));
+				num_glbs--;
+				return -1;
+			}
+		}
 	}
-
-	fd->items = num;
-	fd->item = (ITEMINFO*)calloc(num, sizeof(ITEMINFO));
-
-	if (fd->item == NULL)
-		EXIT_Error("GLB_MountPath: memory");
-
-	GLB_LoadIDT(fd);
 
 	return filenum;
 }

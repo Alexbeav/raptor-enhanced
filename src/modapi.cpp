@@ -269,8 +269,6 @@ void MOD_Startup(void)
         mod.enabled = INI_GetPreferenceLong("Mods", mod.stem.c_str(), 1) != 0;
         mod.filenum = -1;
 
-        INI_PutPreferenceLong("Mods", mod.stem.c_str(), mod.enabled);
-
         if ((int)mod_list.size() >= MOD_MAX)
         {
             LOG_Printf("mod %s: ignored (limit %d)", mod.stem.c_str(), MOD_MAX);
@@ -281,12 +279,13 @@ void MOD_Startup(void)
 
         if (mod.filenum == -1)
         {
-            // not listed at all: a dead file must not occupy a menu slot
-            // or masquerade as an enabled mod
+            // not listed, no INI entry: a dead file must not occupy a menu
+            // slot or masquerade as an enabled mod
             LOG_Printf("mod %s: mount failed, skipping", mod.stem.c_str());
             continue;
         }
 
+        INI_PutPreferenceLong("Mods", mod.stem.c_str(), mod.enabled);
         ParseManifest(mod);
         mod_list.push_back(mod);
     }
