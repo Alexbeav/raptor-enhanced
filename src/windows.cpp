@@ -24,6 +24,7 @@
 #include "windows.h"
 #include "fileids.h"
 #include "winids.h"
+#include "modapi.h"
 
 #define HANGAR_MISSION   0
 #define HANGAR_SUPPLIES  1
@@ -2099,6 +2100,123 @@ WIN_DemoDelay(
     }
 }
 
+
+/***************************************************************************
+WIN_Mods () - Toggle mod files on/off ( engine feature, modapi )
+ ***************************************************************************/
+static void
+WIN_ModsRefresh(
+    int window
+)
+{
+    char row[40];
+    int loop;
+    
+    SWD_SetFieldText(window, MODM_FOOT,
+        ingameflag ? "APPLIES AFTER THIS MISSION" : "APPLIES INSTANTLY");
+    
+    for (loop = 0; loop < MOD_MAX; loop++)
+    {
+        if (loop < MOD_Count())
+        {
+            snprintf(row, sizeof(row), "%s %.30s",
+                MOD_Enabled(loop) ? "[ON ]" : "[OFF]", MOD_Name(loop));
+            SWD_SetFieldText(window, MODM_ROW0 + loop, row);
+            SWD_SetFieldSelect(window, MODM_ROW0 + loop, 1);
+        }
+        else
+        {
+            // keep row 0 selectable so the window always has a live field
+            SWD_SetFieldText(window, MODM_ROW0 + loop,
+                (loop == 0) ? "NO MOD FILES FOUND" : "");
+            SWD_SetFieldSelect(window, MODM_ROW0 + loop, loop == 0);
+        }
+    }
+}
+
+void
+WIN_Mods(
+    void
+)
+{
+    SWD_DLG dlg;
+    int window, item, modnum;
+    
+    item = GLB_GetItemID("MODMENU_SWD");
+    
+    if (item == -1)
+        return;
+    
+    window = SWD_InitWindow(item);
+    
+    if (window == -1)
+        return;
+    
+    SWD_SetWindowPtr(window);
+    WIN_ModsRefresh(window);
+    SWD_ShowAllWindows();
+    SND_Patch(FX_SWEP, 127);
+    GFX_DisplayUpdate();
+    
+    while (1)
+    {
+        SWD_Dialog(&dlg);
+        I_GetNeedResize(false);
+        
+        if (joy_ipt_MenuNew)
+        {
+            if (Back)
+            {
+                dlg.keypress = SC_ESC;
+                JOY_IsKey(Back);
+            }
+            
+            if (BButton)
+            {
+                dlg.keypress = SC_ESC;
+                JOY_IsKey(BButton);
+            }
+            
+            if (AButton)
+            {
+                dlg.keypress = SC_ENTER;
+                JOY_IsKey(AButton);
+            }
+        }
+        
+        if (dlg.keypress == SC_ESC)
+            goto exit_mods;
+        
+        if (dlg.cur_act == S_WIN_COMMAND &&
+            (dlg.cur_cmd == W_CLOSE || dlg.cur_cmd == W_CLOSE_ALL))
+            goto exit_mods;
+        
+        if (dlg.cur_act == S_FLD_COMMAND && dlg.cur_cmd == F_SELECT)
+        {
+            if (dlg.field == MODM_CLOSE)
+                goto exit_mods;
+            
+            modnum = dlg.field - MODM_ROW0;
+            
+            if (modnum >= 0 && modnum < MOD_Count())
+            {
+                MOD_Toggle(modnum);
+                SND_Patch(FX_SWEP, 127);
+                WIN_ModsRefresh(window);
+                SWD_ShowAllWindows();
+                GFX_DisplayUpdate();
+            }
+        }
+    }
+    
+exit_mods:
+    
+    SWD_DestroyWindow(window);
+    SWD_ShowAllWindows();
+    GFX_DisplayUpdate();
+    KBD_Clear();
+}
+
 /***************************************************************************
 WIN_MainMenu () - Main Menu
  ***************************************************************************/
@@ -2123,6 +2241,9 @@ WIN_MainMenu(
     
     if (demo_flag == DEMO_RECORD)
         return;
+    
+    if (!ingameflag && MOD_PendingChanges())
+        MOD_ApplyPending();
     
     window = SWD_InitMasterWindow(FILE132_MAIN_SWD);
     
@@ -2256,6 +2377,26 @@ WIN_MainMenu(
             case MAIN_RETURN:
                 if (ingameflag)
                     goto menu_exit;
+                break;
+            
+            case MAIN_MODS:
+                WIN_Mods();
+                if (!ingameflag && MOD_PendingChanges())
+                {
+                    // safe point: nothing holds locks once the menu window
+                    // is torn down, so the override table can swap freely
+                    PTR_DrawCursor(0);
+                    SWD_DestroyWindow(window);
+                    GLB_FreeAll();
+                    MOD_ApplyPending();
+                    window = SWD_InitMasterWindow(FILE132_MAIN_SWD);
+                    SWD_SetFieldSelect(window, MAIN_RETURN, 0);
+                    SWD_SetFieldItem(window, MAIN_RETURN, -1);
+                    SWD_SetWindowPtr(window);
+                    SWD_ShowAllWindows();
+                    GFX_DisplayUpdate();
+                    PTR_DrawCursor(1);
+                }
                 break;
             
             case MAIN_QUIT:

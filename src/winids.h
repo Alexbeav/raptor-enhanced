@@ -113,6 +113,14 @@
 #define MAIN_RETURN 0x0007   // BUTTON FIELD
 #define MAIN_DEMO 0x0008     // TEXT FIELD
 #define MAIN_0009 0x0009     // TEXT FIELD
+#define MAIN_MODS 0x000a     // BUTTON FIELD ( engine-injected, modapi )
+
+// MODMENU_SWD defines ( rapmenu.glb, built by tools/build_mod_assets.py )
+
+#define MODM_CLOSE 0x0000    // CLOSE GADGET
+#define MODM_TITLE 0x0001    // TEXT FIELD
+#define MODM_ROW0 0x0002     // BUTTON FIELDs ( MOD_MAX rows )
+#define MODM_FOOT ( MODM_ROW0 + MOD_MAX ) // TEXT FIELD
 
 // HANGAR defines
 

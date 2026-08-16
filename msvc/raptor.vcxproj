@@ -49,6 +49,7 @@
     <ClInclude Include="..\src\m_misc.h" />
     <ClInclude Include="..\src\objects.h" />
     <ClInclude Include="..\src\dbopl.h" />
+    <ClInclude Include="..\src\modapi.h" />
     <ClInclude Include="..\src\opl_core.h" />
     <ClInclude Include="..\src\opl3.h" />
     <ClInclude Include="..\src\prefapi.h" />
@@ -97,6 +98,7 @@
     <ClCompile Include="..\src\m_misc.cpp" />
     <ClCompile Include="..\src\objects.cpp" />
     <ClCompile Include="..\src\dbopl.cpp" />
+    <ClCompile Include="..\src\modapi.cpp" />
     <ClCompile Include="..\src\opl_core.cpp" />
     <ClCompile Include="..\src\opl3.cpp" />
     <ClCompile Include="..\src\prefapi.cpp" />
@@ -186,6 +188,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\include\TinySoundFont;..\include\textscreen\include;..\include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4703;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -207,6 +210,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\include\TinySoundFont;..\include\textscreen\include;..\include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4703;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -228,6 +232,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\include\TinySoundFont;..\include\textscreen\include;..\include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\include;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4703;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -247,6 +252,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\include\TinySoundFont;..\include\textscreen\include;..\include\SDL2-devel-2.28.2-VC\SDL2-2.28.2\include;C:\Users\Skynet\source\libs\SDL2-devel-2.0.14-VC\SDL2-2.0.14\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;4703;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>

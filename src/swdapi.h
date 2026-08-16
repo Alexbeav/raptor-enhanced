@@ -219,7 +219,7 @@ extern bool fi_sec_field;
 void SWD_Install(int moveflag);
 void SWD_End(void);
 void SWD_Dialog(SWD_DLG *swd_dlg);
-SWIN* SWD_ReformatFieldData(SWIN *header, int handle);
+SWIN* SWD_ReformatFieldData(SWIN *header, int fileLen);
 int SWD_InitMasterWindow(int handle);
 int SWD_ShowAllWindows(void);
 void SWD_SetWindowPtr(int handle);

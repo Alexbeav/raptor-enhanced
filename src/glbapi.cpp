@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "common.h"
 #include "glbapi.h"
+#include "modapi.h"
 #include "vmemapi.h"
 #include "entypes.h"
 
@@ -36,6 +37,7 @@ char* strupr(char* s)
 static const char* serial = "32768GLB";
 static char exePath[PATH_MAX];
 static int num_glbs;
+static char file_disabled[MAX_GLB_FILES];
 static KEYFILE g_key;
 static char prefix[5] = "FILE";
 static bool fVmem = 0;
@@ -500,6 +502,8 @@ GLB_FetchItem(
 		return NULL;
 	}
 
+	handle = MOD_Resolve(handle);
+
 	itm.handle = handle;
 
 	ASSERT(itm.id.filenum < (WORD)num_glbs);
@@ -605,6 +609,8 @@ GLB_UnlockItem(
 	if (handle == ~0)
 		return;
 
+	handle = MOD_Resolve(handle);
+
 	itm.handle = handle;
 
 	ASSERT(itm.id.filenum < (WORD)num_glbs);
@@ -645,6 +651,8 @@ GLB_IsLabel(
 	if (handle == ~0)
 		return 0;
 
+	handle = MOD_Resolve(handle);
+
 	itm.handle = handle;
 
 	ASSERT(itm.id.filenum < (WORD)num_glbs);
@@ -670,6 +678,8 @@ GLB_ReadItem(
 
 	if (handle == ~0)
 		return;
+
+	handle = MOD_Resolve(handle);
 
 	ASSERT(mem != NULL);
 
@@ -708,6 +718,9 @@ GLB_GetItemID(
 	{
 		for (filenum = 0; filenum < num_glbs; filenum++)
 		{
+			if (file_disabled[filenum])
+				continue;
+
 			maxloop = filedesc[filenum].items;
 			ii = filedesc[filenum].item;
 			
@@ -742,6 +755,8 @@ GLB_GetPtr(
 	if (handle == ~0)
 		return NULL;
 
+	handle = MOD_Resolve(handle);
+
 	itm.handle = handle;
 
 	ASSERT(itm.id.filenum < (uint16_t)num_glbs);
@@ -767,6 +782,8 @@ GLB_FreeItem(
 
 	if (handle == ~0)
 		return;
+
+	handle = MOD_Resolve(handle);
 
 	itm.handle = handle;
 
@@ -840,6 +857,8 @@ GLB_ItemSize(
 
 	if (handle == ~0)
 		return 0;
+
+	handle = MOD_Resolve(handle);
 
 	itm.handle = handle;
 
@@ -918,4 +937,123 @@ GLB_SaveFile(
 	}
 	
 	fclose(handle);
+}
+/***************************************************************************
+ GLB_NumFiles() - number of mounted archives (base + mods)
+ ***************************************************************************/
+int
+GLB_NumFiles(
+	void
+)
+{
+	return num_glbs;
+}
+
+/***************************************************************************
+ GLB_FileItemCount() / GLB_FileItemName() - per-archive item enumeration
+ (used by the mod system to build its override tables)
+ ***************************************************************************/
+int
+GLB_FileItemCount(
+	int filenum
+)
+{
+	if (filenum < 0 || filenum >= num_glbs)
+		return 0;
+
+	return filedesc[filenum].items;
+}
+
+const char*
+GLB_FileItemName(
+	int filenum,
+	int itemnum
+)
+{
+	if (filenum < 0 || filenum >= num_glbs)
+		return "";
+
+	if (itemnum < 0 || itemnum >= filedesc[filenum].items)
+		return "";
+
+	return filedesc[filenum].item[itemnum].name;
+}
+
+/***************************************************************************
+ GLB_GetExePath() - base directory the archives were mounted from
+ ***************************************************************************/
+const char*
+GLB_GetExePath(
+	void
+)
+{
+	return exePath;
+}
+
+/***************************************************************************
+ GLB_MountPath() - mounts an additional .GLB archive by explicit path.
+ Returns its filenum, or -1 if the file is missing or empty. Mounted
+ archives take the next filenum slots, so base handles stay stable.
+ ***************************************************************************/
+int
+GLB_MountPath(
+	const char* path
+)
+{
+	FILEDESC* fd;
+	int filenum, num;
+
+	if (num_glbs >= MAX_GLB_FILES)
+		return -1;
+
+	filenum = num_glbs;
+	fd = &filedesc[filenum];
+	memset(fd, 0, sizeof(FILEDESC));
+
+	if (strlen(path) >= sizeof(fd->filepath))
+		return -1;
+
+	strcpy(fd->filepath, path);
+	fd->permissions = "rb";
+
+	if ((fd->handle = fopen(fd->filepath, "rb")) == NULL)
+	{
+		memset(fd, 0, sizeof(FILEDESC));
+		return -1;
+	}
+
+	num_glbs++;
+	num = GLB_NumItems(filenum);
+
+	if (num <= 0)
+	{
+		fclose(fd->handle);
+		memset(fd, 0, sizeof(FILEDESC));
+		num_glbs--;
+		return -1;
+	}
+
+	fd->items = num;
+	fd->item = (ITEMINFO*)calloc(num, sizeof(ITEMINFO));
+
+	if (fd->item == NULL)
+		EXIT_Error("GLB_MountPath: memory");
+
+	GLB_LoadIDT(fd);
+
+	return filenum;
+}
+
+/***************************************************************************
+ GLB_SetFileEnabled() - include/exclude a mounted archive from name lookups
+ (disabled mod files stay mounted so existing handles remain valid)
+ ***************************************************************************/
+void
+GLB_SetFileEnabled(
+	int filenum,
+	int enabled
+)
+{
+	if (filenum >= 0 && filenum < MAX_GLB_FILES)
+		file_disabled[filenum] = !enabled;
 }

@@ -82,6 +82,7 @@ set(SOURCE_FILES
     src/opl3.cpp
     src/dbopl.cpp
     src/opl_core.cpp
+    src/modapi.cpp
     src/eshot.cpp
     src/gfxapi_a.cpp
     src/dspapi.cpp

@@ -6,6 +6,7 @@
 #include "gfxapi.h"
 #include "glbapi.h"
 #include "swdapi.h"
+#include "modapi.h"
 #include "imsapi.h"
 #include "ptrapi.h"
 #include "kbdapi.h"
@@ -1590,10 +1591,9 @@ SWD_End(
 SWIN*
 SWD_ReformatFieldData(
     SWIN* header,
-    int handle
+    int fileLen
 )
 {
-    int fileLen = GLB_ItemSize(handle);
     int len = sizeof(SWIN) + (LE_LONG(header->numflds) * sizeof(SFIELD));
     int oldLen = sizeof(SWIN) + (LE_LONG(header->numflds) * sizeof(SFIELD32));
     int eof = fileLen - oldLen;
@@ -1686,20 +1686,24 @@ SWD_InitWindow(
     
     header = (SWIN*)GLB_LockItem(handle);
 
+    // give the mod system a chance to patch window data (MODS menu button)
+    int swd_size = GLB_ItemSize(handle);
+    header = (SWIN*)MOD_FilterWindowData(handle, (char*)header, &swd_size);
+
 #if _MSC_VER
 #if _WIN64
-    header = SWD_ReformatFieldData(header, handle);
+    header = SWD_ReformatFieldData(header, swd_size);
 #endif // _WIN64
 #endif // _MSC_VER
 #if __GNUC__
 #if __x86_64__
-    header = SWD_ReformatFieldData(header, handle);
+    header = SWD_ReformatFieldData(header, swd_size);
 #endif // __x86_64__
 #if __aarch64__
-    header = SWD_ReformatFieldData(header, handle);
+    header = SWD_ReformatFieldData(header, swd_size);
 #endif // __aarch64__
 #if __powerpc64__
-    header = SWD_ReformatFieldData(header, handle);
+    header = SWD_ReformatFieldData(header, swd_size);
 #endif // __powerpc64__
 #endif // __GNUC__
     

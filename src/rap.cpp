@@ -5,6 +5,7 @@
 #include "SDL.h"
 #include "common.h"
 #include "glbapi.h"
+#include "modapi.h"
 #include "i_video.h"
 #include "gfxapi.h"
 #include "vmemapi.h"
@@ -1537,6 +1538,8 @@ main(
 #else
     GLB_InitSystem(argv[0], 6, 0);
 #endif //_WIN32 || __linux__ || __APPLE__
+    
+    MOD_Startup();
     
     if (reg_flag)
     {
