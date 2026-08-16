@@ -118,6 +118,94 @@ SHOTS
 }
 
 /***************************************************************************
+Moddable player cannon: a mod may provide a PLAYRGUN_TXT item that
+replaces the standard forward guns' muzzle layout and fire cadence:
+
+    RATE 1            ticks between volleys ( stock: 2 )
+    MUZZLE 0 0        up to 8 lines: x and y offset from the player center
+
+Loaded at startup and again whenever the mod set hot-applies. Without
+the item (or with no MUZZLE lines) the stock twin guns are untouched.
+ ***************************************************************************/
+#define MAX_MUZZLES 8
+#define NEWLINE_CH 0x0a
+
+static struct
+{
+    int active;
+    int rate;
+    int count;
+    int mx[MAX_MUZZLES];
+    int my[MAX_MUZZLES];
+} playrgun;
+
+void
+SHOTS_LoadGunConfig(
+    void
+)
+{
+    char line[64];
+    char *data;
+    int item, size, pos, len, dx, dy, rate;
+    
+    memset(&playrgun, 0, sizeof(playrgun));
+    playrgun.rate = 2;
+    
+    item = GLB_GetItemID("PLAYRGUN_TXT");
+    
+    if (item == -1)
+        return;
+    
+    size = GLB_ItemSize(item);
+    data = GLB_GetItem(item);
+    
+    if (!data || size <= 0)
+        return;
+    
+    for (pos = 0; pos < size; )
+    {
+        for (len = 0; pos + len < size && data[pos + len] != NEWLINE_CH && len < (int)sizeof(line) - 1; len++)
+            line[len] = data[pos + len];
+        
+        line[len] = 0;
+        
+        while (pos + len < size && data[pos + len] != NEWLINE_CH)
+            len++;
+        
+        pos += len + 1;
+        
+        if (sscanf(line, "RATE %d", &rate) == 1)
+        {
+            if (rate < 1)
+                rate = 1;
+            if (rate > 35)
+                rate = 35;
+            playrgun.rate = rate;
+        }
+        else if (sscanf(line, "MUZZLE %d %d", &dx, &dy) == 2 &&
+                 playrgun.count < MAX_MUZZLES)
+        {
+            if (dx < -160) dx = -160;
+            if (dx > 160) dx = 160;
+            if (dy < -100) dy = -100;
+            if (dy > 100) dy = 100;
+            playrgun.mx[playrgun.count] = dx;
+            playrgun.my[playrgun.count] = dy;
+            playrgun.count++;
+        }
+    }
+    
+    GLB_FreeItem(item);
+    
+    if (playrgun.count)
+    {
+        playrgun.active = 1;
+        LOG_Printf("player gun config: %d muzzle(s), rate %d",
+            playrgun.count, playrgun.rate);
+    }
+}
+
+/***************************************************************************
 SHOTS_Init () - Inits SHOTS system and clears link list
  ***************************************************************************/
 void 
@@ -621,6 +709,40 @@ SHOTS_PlayerShoot(
         if (!fx_gus)
             SND_Patch(FX_GUN, 127);
         g_flash = 7;
+
+        if (playrgun.active)
+        {
+            int mz;
+
+            lib->cur_shoot = playrgun.rate;
+
+            for (mz = 0; mz < playrgun.count; mz++)
+            {
+                if (mz)
+                {
+                    cur = SHOTS_Get();
+
+                    if (!cur)
+                        return 0;
+                }
+
+                cur->curframe = (wrand() % lib->numframes);
+                cur->lib = &shot_lib[type];
+                cur->delayflag = lib->delayflag;
+                cur->speed = lib->speed;
+                cur->x = player_cx + playrgun.mx[mz];
+                cur->y = player_cy + playrgun.my[mz];
+                cur->move.x = cur->x;
+                cur->move.y = cur->y;
+                cur->move.x2 = cur->x;
+                cur->move.y2 = 0;
+                cur->startx = player_cx;
+                cur->starty = player_cy;
+                ANIMS_StartAnim(A_PLAYER_SHOOT, playrgun.mx[mz], playrgun.my[mz]);
+            }
+            break;
+        }
+
         cur->curframe = (wrand() % lib->numframes);
         cur->lib = &shot_lib[type];
         cur->delayflag = lib->delayflag;

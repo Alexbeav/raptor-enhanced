@@ -47,6 +47,23 @@ format automatically. Requires Python 3.10+ and Pillow. See
 Item names come from the game's data — browse them (and edit maps, art and
 menus) with the [Raptor Map Editor](https://github.com/Alexbeav/raptor-map-editor).
 
+## Player gun config
+
+A mod may include a `PLAYRGUN_TXT` item to redefine the standard forward
+cannon (the machine gun, not the special weapons):
+
+```
+RATE 1
+MUZZLE -6 0
+MUZZLE 6 0
+```
+
+`RATE` is ticks between volleys (stock: 2, lower = faster). Each
+`MUZZLE x y` line (up to 8) adds a barrel at that offset from the
+player's center. The shipped `BulletHose.glb` is a worked example: one
+centered barrel at maximum cyclic rate. Changes hot-apply with the mod
+toggle.
+
 ## Ground rules
 
 - Item and file names: 15 ASCII characters max; `.glb` extension.

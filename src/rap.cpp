@@ -1621,6 +1621,7 @@ main(
     OBJS_Init();
     TILE_Init();
     SHOTS_Init();
+    SHOTS_LoadGunConfig();               // mods may provide PLAYRGUN_TXT
     ESHOT_Init();
     BONUS_Init();
     ANIMS_Init();

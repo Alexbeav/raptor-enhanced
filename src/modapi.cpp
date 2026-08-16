@@ -27,6 +27,7 @@
 #include "swdapi.h"
 #include "fileids.h"
 #include "kbdapi.h"
+#include "shots.h"
 
 namespace fs = std::filesystem;
 
@@ -304,6 +305,8 @@ void MOD_Startup(void)
 // contribute nothing; GLB name lookups skip their files.
 void MOD_ApplyPending(void)
 {
+    int was_pending = pending_changes;
+
     pending_changes = 0;
     overrides.clear();
     override_generation++;
@@ -332,6 +335,10 @@ void MOD_ApplyPending(void)
             }
         }
     }
+
+    // configs derived from moddable items re-read the current set
+    if (was_pending)
+        SHOTS_LoadGunConfig();
 }
 
 int MOD_PendingChanges(void)

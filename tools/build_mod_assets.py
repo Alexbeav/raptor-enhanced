@@ -119,6 +119,18 @@ def main():
     (mods / "NightOps.glb").write_bytes(night.build())
     print(f"mods/NightOps.glb: {len(night.items[0].data)}-byte manifest, no game data")
 
+    hose = GlbFile()
+    hose.items.append(GlbItem(0, "MODINFO_TXT", (
+        "Bullet Hose\n"
+        "Single nose cannon, maximum cyclic rate. BRRRT.\n"
+    ).encode()))
+    hose.items.append(GlbItem(0, "PLAYRGUN_TXT", (
+        "RATE 1\n"
+        "MUZZLE 0 0\n"
+    ).encode()))
+    (mods / "BulletHose.glb").write_bytes(hose.build())
+    print("mods/BulletHose.glb: gun-config demo (RATE 1, one muzzle)")
+
 
 if __name__ == "__main__":
     main()

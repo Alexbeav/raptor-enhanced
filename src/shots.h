@@ -76,3 +76,4 @@ void SHOTS_Clear(void);
 void SHOTS_Think(void);
 void SHOTS_Display(void);
 void SHOTS_Init(void);
+void SHOTS_LoadGunConfig(void);
