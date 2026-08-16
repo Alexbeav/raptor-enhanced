@@ -346,17 +346,27 @@ def quantize_rgba(w: int, h: int, rgba: bytes, palette) -> tuple[bytes, bytes]:
     return bytes(px), bytes(mask)
 
 
-def encode_pic(w: int, h: int, pixels: bytes, mask: bytes, gtype: int) -> bytes:
+def encode_pic(w: int, h: int, pixels: bytes, mask: bytes, gtype: int,
+               anchor: tuple[int, int] = (0, 0),
+               header_size: tuple[int, int] | None = None) -> bytes:
     """Inverse of parse_pic. GPIC (tiles/UI): raw 8bpp, header opts (1, 0) as in
     all shipped tiles. GSPRITE (enemies/objects): opaque runs as segments with
     offset = y*320+x (VGA screen offset), terminated by offset=len=-1, header
-    opts (0, h) as in all shipped sprites."""
+    opts (0, h) as in all shipped sprites.
+
+    GSPRITE only: `anchor` shifts every run's coordinates (negative values
+    let art overhang the logical origin) and `header_size` overrides the
+    header dimensions - together they center oversized replacement art on
+    the base item's footprint. The engine clips per run, so negative or
+    overhanging coordinates are safe."""
     if gtype == GTYPE_PIC:
         return struct.pack("<5i", GTYPE_PIC, 1, 0, w, h) + bytes(
             pixels[i] if mask[i] else 0 for i in range(w * h))
     if gtype != GTYPE_SPRITE:
         raise ValueError(f"unknown GFX_TYPE {gtype}")
-    out = bytearray(struct.pack("<5i", GTYPE_SPRITE, 0, h, w, h))
+    ax, ay = anchor
+    hw, hh = header_size or (w, h)
+    out = bytearray(struct.pack("<5i", GTYPE_SPRITE, 0, hh, hw, hh))
     for y in range(h):
         x = 0
         while x < w:
@@ -366,7 +376,7 @@ def encode_pic(w: int, h: int, pixels: bytes, mask: bytes, gtype: int) -> bytes:
             run = x
             while run < w and mask[y * w + run]:
                 run += 1
-            out += struct.pack("<4i", x, y, y * 320 + x, run - x)
+            out += struct.pack("<4i", x + ax, y + ay, (y + ay) * 320 + x + ax, run - x)
             out += pixels[y * w + x: y * w + run]
             x = run
     out += struct.pack("<4i", 0, 0, -1, -1)

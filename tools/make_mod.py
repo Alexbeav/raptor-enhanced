@@ -113,6 +113,7 @@ def main():
         pixels, mask = quantize_rgba(img.width, img.height, img.tobytes(), palette)
         import struct
         gtype = GTYPE_PIC
+        base_w = base_h = None
         # reuse the base item's encoding so sprites stay sprites
         seen = 0
         for num in sorted(glbs.files):
@@ -120,10 +121,20 @@ def main():
                 if item.name == name and item.data:
                     seen += 1
                     if seen == occurrence:
-                        gtype = struct.unpack_from("<i", item.data)[0]
-        data = encode_pic(img.width, img.height, pixels, mask, gtype)
+                        gtype, _, _, base_w, base_h = struct.unpack_from("<5i", item.data)
+        anchor, header = (0, 0), None
+        oversize = ""
+        if (gtype == 0 and base_w is not None
+                and (img.width > base_w or img.height > base_h)):
+            # sprite art larger than stock: center it on the base footprint
+            # so the game's positioning and collision stay unchanged
+            anchor = ((base_w - img.width) // 2, (base_h - img.height) // 2)
+            header = (base_w, base_h)
+            oversize = f", centered on {base_w}x{base_h}"
+        data = encode_pic(img.width, img.height, pixels, mask, gtype,
+                          anchor=anchor, header_size=header)
         mod.items.append(GlbItem(0, name, data))
-        print(f"  {name} ({img.width}x{img.height}, {'sprite' if gtype == 0 else 'block'}, occurrence {occurrence})")
+        print(f"  {name} ({img.width}x{img.height}, {'sprite' if gtype == 0 else 'block'}, occurrence {occurrence}{oversize})")
 
     for txt in txts:
         name = txt.stem.split(".")[0].upper()
