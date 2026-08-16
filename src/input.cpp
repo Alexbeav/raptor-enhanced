@@ -8,6 +8,7 @@
 #include "rap.h"
 #include "demo.h"
 #include "input.h"
+#include "shots.h"
 #include "i_video.h"
 #include "joyapi.h"
 
@@ -444,8 +445,31 @@ IPT_MovePlayer(
         }
     }
     
-    playerx += g_addx;
-    playery += g_addy;
+    {
+        // moddable airframe speed: percent scaling with carried fractions
+        int speed_pct = SHOTS_GetSpeedPct();
+
+        if (speed_pct == 100)
+        {
+            playerx += g_addx;
+            playery += g_addy;
+        }
+        else
+        {
+            static int frac_x, frac_y;
+            int step;
+
+            frac_x += g_addx * speed_pct;
+            step = frac_x / 100;
+            frac_x -= step * 100;
+            playerx += step;
+
+            frac_y += g_addy * speed_pct;
+            step = frac_y / 100;
+            frac_y -= step * 100;
+            playery += step;
+        }
+    }
     
     if (startendwave == -1)
     {

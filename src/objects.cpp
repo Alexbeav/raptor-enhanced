@@ -1180,6 +1180,11 @@ OBJS_SubEnergy(
     if (curplr_diff == DIFF_0 && amt > 1)
         amt >>= 1;
     
+    amt = SHOTS_ScaleDamage(amt);          // moddable airframe armor
+    
+    if (amt <= 0)
+        return 0;
+    
     if (cur)
     {
         ANIMS_StartAnim(A_SUPER_SHIELD, 0, 0);

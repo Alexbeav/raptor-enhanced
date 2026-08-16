@@ -78,3 +78,5 @@ void SHOTS_Display(void);
 void SHOTS_Init(void);
 void SHOTS_LoadGunConfig(void);
 int SHOTS_GetExhaust(int *dx, int *dy);
+int SHOTS_GetSpeedPct(void);
+int SHOTS_ScaleDamage(int amt);

@@ -126,6 +126,9 @@ replaces the standard forward guns' muzzle layout and fire cadence:
     MUZZLE 0 0        up to 8 lines: x and y offset from the player center
     EXHAUST 4 5       engine flame positions: x spread and y offset from
                       the player center ( stock: 3 and 15 )
+    SPEED 80          movement speed percent ( stock: 100, 25-200 )
+    ARMOR 150         effective hitpoints percent: incoming damage is
+                      scaled by 100/ARMOR ( stock: 100, 50-400 )
 
 Loaded at startup and again whenever the mod set hot-applies. Without
 the item (or with no MUZZLE lines) the stock twin guns are untouched.
@@ -141,6 +144,9 @@ static struct
     int exhaust_set;
     int exhaust_dx;
     int exhaust_dy;
+    int speed_pct;
+    int armor_pct;
+    int armor_acc;
     int count;
     int mx[MAX_MUZZLES];
     int my[MAX_MUZZLES];
@@ -160,6 +166,8 @@ SHOTS_LoadGunConfig(
     memset(&playrgun, 0, sizeof(playrgun));
     playrgun.rate = 2;
     playrgun.damage = STOCK_FORWARD_HITS;
+    playrgun.speed_pct = 100;
+    playrgun.armor_pct = 100;
 
     // damage lives in the shared shot lib (collision code reads
     // lib->hits), so restore stock here in case a config was active
@@ -204,6 +212,18 @@ SHOTS_LoadGunConfig(
             if (damage > 50)
                 damage = 50;
             playrgun.damage = damage;
+        }
+        else if (sscanf(line, "SPEED %d", &dx) == 1)
+        {
+            if (dx < 25) dx = 25;
+            if (dx > 200) dx = 200;
+            playrgun.speed_pct = dx;
+        }
+        else if (sscanf(line, "ARMOR %d", &dx) == 1)
+        {
+            if (dx < 50) dx = 50;
+            if (dx > 400) dx = 400;
+            playrgun.armor_pct = dx;
         }
         else if (sscanf(line, "EXHAUST %d %d", &dx, &dy) == 2)
         {
@@ -772,7 +792,10 @@ SHOTS_PlayerShoot(
                 cur->move.y2 = 0;
                 cur->startx = player_cx;
                 cur->starty = player_cy;
-                ANIMS_StartAnim(A_PLAYER_SHOOT, playrgun.mx[mz], playrgun.my[mz]);
+
+                // one flash at the first muzzle - stacked barrels share it
+                if (mz == 0)
+                    ANIMS_StartAnim(A_PLAYER_SHOOT, playrgun.mx[0], playrgun.my[0]);
             }
             break;
         }
@@ -1485,4 +1508,36 @@ SHOTS_GetExhaust(
     *dy = playrgun.exhaust_dy;
 
     return 1;
+}
+
+/***************************************************************************
+SHOTS_GetSpeedPct () - mod-configured player speed, percent of stock
+ ***************************************************************************/
+int
+SHOTS_GetSpeedPct(
+    void
+)
+{
+    return playrgun.active ? playrgun.speed_pct : 100;
+}
+
+/***************************************************************************
+SHOTS_ScaleDamage () - applies mod armor: damage scaled by 100/ARMOR,
+with a running remainder so chip damage still accumulates
+ ***************************************************************************/
+int
+SHOTS_ScaleDamage(
+    int amt
+)
+{
+    int take;
+
+    if (!playrgun.active || playrgun.armor_pct == 100 || amt <= 0)
+        return amt;
+
+    playrgun.armor_acc += amt * 100;
+    take = playrgun.armor_acc / playrgun.armor_pct;
+    playrgun.armor_acc -= take * playrgun.armor_pct;
+
+    return take;
 }
