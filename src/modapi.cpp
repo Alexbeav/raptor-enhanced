@@ -233,14 +233,29 @@ void MOD_Startup(void)
     if (mods_dir.empty())
         return;
 
-    for (const auto& e : fs::directory_iterator(mods_dir, ec))
-    {
-        std::string ext = e.path().extension().string();
-        for (auto& c : ext)
-            c = (char)std::tolower((unsigned char)c);
+    fs::directory_iterator it(mods_dir, ec);
 
-        if (ext == ".glb")
-            found.push_back(e.path());
+    if (ec)
+    {
+        LOG_Printf("mods: cannot scan %s: %s", mods_dir.c_str(), ec.message().c_str());
+        return;
+    }
+
+    try
+    {
+        for (const auto& e : it)
+        {
+            std::string ext = e.path().extension().string();
+            for (auto& c : ext)
+                c = (char)std::tolower((unsigned char)c);
+
+            if (ext == ".glb")
+                found.push_back(e.path());
+        }
+    }
+    catch (const fs::filesystem_error& err)
+    {
+        LOG_Printf("mods: directory scan error: %s", err.what());
     }
 
     std::sort(found.begin(), found.end());
@@ -265,10 +280,14 @@ void MOD_Startup(void)
         mod.filenum = GLB_MountPath(mod.path.c_str());
 
         if (mod.filenum == -1)
+        {
+            // not listed at all: a dead file must not occupy a menu slot
+            // or masquerade as an enabled mod
             LOG_Printf("mod %s: mount failed, skipping", mod.stem.c_str());
-        else
-            ParseManifest(mod);
+            continue;
+        }
 
+        ParseManifest(mod);
         mod_list.push_back(mod);
     }
 
