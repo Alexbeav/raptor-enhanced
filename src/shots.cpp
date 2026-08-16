@@ -124,6 +124,8 @@ replaces the standard forward guns' muzzle layout and fire cadence:
     RATE 1            ticks between volleys ( stock: 2 )
     DAMAGE 2          per-shot damage ( stock: 1 )
     MUZZLE 0 0        up to 8 lines: x and y offset from the player center
+    EXHAUST 4 5       engine flame positions: x spread and y offset from
+                      the player center ( stock: 3 and 15 )
 
 Loaded at startup and again whenever the mod set hot-applies. Without
 the item (or with no MUZZLE lines) the stock twin guns are untouched.
@@ -136,6 +138,9 @@ static struct
     int active;
     int rate;
     int damage;
+    int exhaust_set;
+    int exhaust_dx;
+    int exhaust_dy;
     int count;
     int mx[MAX_MUZZLES];
     int my[MAX_MUZZLES];
@@ -199,6 +204,16 @@ SHOTS_LoadGunConfig(
             if (damage > 50)
                 damage = 50;
             playrgun.damage = damage;
+        }
+        else if (sscanf(line, "EXHAUST %d %d", &dx, &dy) == 2)
+        {
+            if (dx < 0) dx = 0;
+            if (dx > 16) dx = 16;
+            if (dy < -16) dy = -16;
+            if (dy > 16) dy = 16;
+            playrgun.exhaust_dx = dx;
+            playrgun.exhaust_dy = dy;
+            playrgun.exhaust_set = 1;
         }
         else if (sscanf(line, "MUZZLE %d %d", &dx, &dy) == 2 &&
                  playrgun.count < MAX_MUZZLES)
@@ -1452,4 +1467,22 @@ SHOTS_Display(
             break;
         }
     }
+}
+
+/***************************************************************************
+SHOTS_GetExhaust () - mod-configured engine flame offsets, 0 = use stock
+ ***************************************************************************/
+int
+SHOTS_GetExhaust(
+    int *dx,
+    int *dy
+)
+{
+    if (!playrgun.active || !playrgun.exhaust_set)
+        return 0;
+
+    *dx = playrgun.exhaust_dx;
+    *dy = playrgun.exhaust_dy;
+
+    return 1;
 }

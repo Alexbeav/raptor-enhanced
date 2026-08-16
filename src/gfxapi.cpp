@@ -715,6 +715,9 @@ GFX_ShadeShape(
         break;
     }
     
+    if (rval == 1 && LE_LONG(h->opt1))
+        rval = 2;   // same fast-path hazard as GFX_PutSprite
+
     switch (rval)
     {
     case 1:
@@ -1433,6 +1436,12 @@ GFX_PutSprite(
     
     if (!rval) 
         return;
+
+    // sprites flagged opt1 (oversized mod art with centered, possibly
+    // negative run coordinates) must always use the per-run clip path:
+    // the fast path's uint16 offset math cannot represent them
+    if (rval == 1 && LE_LONG(h->opt1))
+        rval = 2;
 
     inmem += sizeof(GFX_PIC);
 

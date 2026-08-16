@@ -1155,8 +1155,11 @@ Do_Game(
 
                 if (draw_player)
                 {
-                    FLAME_Down(ipcx - o_engine[playerpic] - 3, ipcy + 15, 4, gl_cnt % 2);
-                    FLAME_Down(ipcx + o_engine[playerpic] - 2, ipcy + 15, 4, gl_cnt % 2);
+                    int exdx = 3, exdy = 15;
+
+                    SHOTS_GetExhaust(&exdx, &exdy);
+                    FLAME_Down(ipcx - o_engine[playerpic] - exdx, ipcy + exdy, 4, gl_cnt % 2);
+                    FLAME_Down(ipcx + o_engine[playerpic] + exdx - 5, ipcy + exdy, 4, gl_cnt % 2);
                     GFX_PutSprite((char*)GLB_GetItem(curship[playerpic + g_flash]), ipx, ipy);
                     if (g_commit)
                         g_flash = 0;

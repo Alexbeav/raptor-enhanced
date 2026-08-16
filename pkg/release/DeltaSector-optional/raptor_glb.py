@@ -366,7 +366,8 @@ def encode_pic(w: int, h: int, pixels: bytes, mask: bytes, gtype: int,
         raise ValueError(f"unknown GFX_TYPE {gtype}")
     ax, ay = anchor
     hw, hh = header_size or (w, h)
-    out = bytearray(struct.pack("<5i", GTYPE_SPRITE, 0, hh, hw, hh))
+    clip_flag = 1 if (anchor != (0, 0) or header_size) else 0
+    out = bytearray(struct.pack("<5i", GTYPE_SPRITE, clip_flag, hh, hw, hh))
     for y in range(h):
         x = 0
         while x < w:

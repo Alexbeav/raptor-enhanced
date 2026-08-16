@@ -70,7 +70,9 @@ MUZZLE 6 0
 
 `RATE` is ticks between volleys (stock: 2, lower = faster). `DAMAGE` is
 per-shot damage (stock: 1). Each `MUZZLE x y` line (up to 8) adds a
-barrel at that offset from the player's center. The shipped
+barrel at that offset from the player's center. `EXHAUST x y` moves the
+two engine flames: x is the spread from center, y the vertical offset
+(stock: 3 and 15) — position them under your airframe's engines. The shipped
 `BulletHose.glb` is a worked example: one centered barrel, maximum
 cyclic rate, double damage. Changes hot-apply with the mod toggle.
 
