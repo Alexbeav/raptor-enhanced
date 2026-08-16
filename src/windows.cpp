@@ -2243,7 +2243,10 @@ WIN_MainMenu(
         return;
     
     if (!ingameflag && MOD_PendingChanges())
+    {
         MOD_ApplyPending();
+        RAP_ReloadCursor();
+    }
     
     window = SWD_InitMasterWindow(FILE132_MAIN_SWD);
     
@@ -2389,6 +2392,7 @@ WIN_MainMenu(
                     SWD_DestroyWindow(window);
                     GLB_FreeAll();
                     MOD_ApplyPending();
+                    RAP_ReloadCursor();
                     window = SWD_InitMasterWindow(FILE132_MAIN_SWD);
                     SWD_SetFieldSelect(window, MAIN_RETURN, 0);
                     SWD_SetFieldItem(window, MAIN_RETURN, -1);

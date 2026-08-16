@@ -37,6 +37,8 @@ struct ModEntry
     std::string display;   // manifest line 1 (falls back to stem)
     std::string path;
     std::vector<std::pair<std::string, std::string>> aliases;
+    std::vector<std::pair<int, int>> mappings;   // base handle -> new handle
+    std::vector<std::string> additions;          // item names new to the game
     int enabled;
     int filenum;           // -1 only if the mount failed at startup
 };
@@ -169,9 +171,24 @@ static void ParseManifest(ModEntry& mod)
     }
 }
 
-static void BuildItemOverrides(const ModEntry& mod)
+// Computed once at mount: every base item this mod would redirect (and
+// every brand-new name it adds). ApplyPending replays the enabled mods'
+// mappings in order; MOD_Toggle uses the same data for conflict checks.
+static void ComputeMappings(ModEntry& mod)
 {
     int items = GLB_FileItemCount(mod.filenum);
+
+    for (const auto& a : mod.aliases)
+    {
+        int nsrc = OccCount(a.first.c_str());
+        int ndst = OccCount(a.second.c_str());
+
+        for (int k = 0; k < nsrc; k++)
+        {
+            int d = OccHandle(a.second.c_str(), k < ndst ? k : ndst - 1);
+            mod.mappings.push_back({ OccHandle(a.first.c_str(), k), d });
+        }
+    }
 
     for (int i = 0; i < items; i++)
     {
@@ -201,7 +218,7 @@ static void BuildItemOverrides(const ModEntry& mod)
                 if (base != -1 &&
                     ((base & 0xffff) + off) < GLB_FileItemCount(base >> 16))
                 {
-                    AddOverride(base + off, (mod.filenum << 16) | i);
+                    mod.mappings.push_back({ base + off, (mod.filenum << 16) | i });
                     continue;
                 }
             }
@@ -222,9 +239,28 @@ static void BuildItemOverrides(const ModEntry& mod)
         int base = OccHandle(name, k);
 
         if (base != -1)
-            AddOverride(base, (mod.filenum << 16) | i);
-        // unmatched names are additions; GLB_GetItemID finds them normally
+            mod.mappings.push_back({ base, (mod.filenum << 16) | i });
+        else if (k == 0)
+            mod.additions.push_back(name);
+        // additions are found by GLB_GetItemID's normal search
     }
+}
+
+// Two mods conflict when they would redirect the same base item or add
+// an item under the same new name.
+static int ModsConflict(const ModEntry& a, const ModEntry& b)
+{
+    for (const auto& ma : a.mappings)
+        for (const auto& mb : b.mappings)
+            if (ma.first == mb.first)
+                return 1;
+
+    for (const auto& na : a.additions)
+        for (const auto& nb : b.additions)
+            if (na == nb)
+                return 1;
+
+    return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -318,6 +354,7 @@ void MOD_Startup(void)
 
         INI_PutPreferenceLong("Mods", mod.stem.c_str(), mod.enabled);
         ParseManifest(mod);
+        ComputeMappings(mod);
         mod_list.push_back(mod);
     }
 
@@ -341,6 +378,8 @@ void MOD_ApplyPending(void)
     overrides.clear();
     override_generation++;
 
+    int on = 0;
+
     for (auto& mod : mod_list)
     {
         if (mod.filenum != -1)
@@ -349,22 +388,16 @@ void MOD_ApplyPending(void)
 
             if (mod.enabled)
             {
-                for (const auto& a : mod.aliases)
-                {
-                    int nsrc = OccCount(a.first.c_str());
-                    int ndst = OccCount(a.second.c_str());
+                on++;
 
-                    for (int k = 0; k < nsrc; k++)
-                    {
-                        int d = OccHandle(a.second.c_str(), k < ndst ? k : ndst - 1);
-                        AddOverride(OccHandle(a.first.c_str(), k), d);
-                    }
-                }
-
-                BuildItemOverrides(mod);
+                for (const auto& m : mod.mappings)
+                    AddOverride(m.first, m.second);
             }
         }
     }
+
+    LOG_Printf("mods: applied - %d of %d enabled, %d overrides",
+        on, (int)mod_list.size(), (int)overrides.size());
 
     // configs derived from moddable items re-read the current set
     if (was_pending)
@@ -436,6 +469,25 @@ void MOD_Toggle(int i)
     mod_list[i].enabled ^= 1;
     pending_changes = 1;
     INI_PutPreferenceLong("Mods", mod_list[i].stem.c_str(), mod_list[i].enabled);
+
+    // conflict guard: enabling a mod turns off enabled mods that would
+    // fight over the same items (the menu re-render shows them [OFF])
+    if (mod_list[i].enabled)
+    {
+        for (int j = 0; j < (int)mod_list.size(); j++)
+        {
+            if (j == i || !mod_list[j].enabled)
+                continue;
+
+            if (ModsConflict(mod_list[i], mod_list[j]))
+            {
+                mod_list[j].enabled = 0;
+                INI_PutPreferenceLong("Mods", mod_list[j].stem.c_str(), 0);
+                LOG_Printf("mod %s: disabled, conflicts with %s",
+                    mod_list[j].stem.c_str(), mod_list[i].stem.c_str());
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

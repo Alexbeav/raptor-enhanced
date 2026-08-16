@@ -134,6 +134,7 @@ void LOG_Init(void)
 char* g_highmem;
 
 char *cursor_pic;
+static int ptr_cursor_active;
 int draw_player;
 int fadeflag;
 int end_fadeflag;
@@ -285,9 +286,28 @@ RAP_ClearSides(
 }
 
 /***************************************************************************
+RAP_ReloadCursor () - Re-fetches the pointer art after a mod hot-apply
+ ***************************************************************************/
+void
+RAP_ReloadCursor(
+    void
+)
+{
+    // the cursor art is locked once and handed to the pointer system as a
+    // raw pointer; after a mod hot-apply it must be re-fetched or cursor
+    // overrides never apply (or never revert)
+    if (!ptr_cursor_active)
+        return;
+
+    GLB_UnlockItem(FILE112_CURSOR_PIC);
+    cursor_pic = (char*)GLB_LockItem(FILE112_CURSOR_PIC);
+    PTR_SetPic(cursor_pic);
+}
+
+/***************************************************************************
 RAP_GetShipPic () - Loads Correct Ship Pics for Light/Dark Waves
  ***************************************************************************/
-void 
+void
 RAP_GetShipPic(
     void
 )
@@ -1570,6 +1590,8 @@ main(
         PTR_SetPos(160, 100);
         PTR_DrawCursor(0);
     }
+
+    ptr_cursor_active = ptrflag;
     
     // = SET UP SHIP PICTURES =========================
     for (loop = 0; loop < 7; loop++)

@@ -175,6 +175,7 @@ void MoveMobj(MOVEOBJ *cur);
 int MoveSobj(MOVEOBJ *cur, int speed);
 void RAP_FreeMap(void);
 void RAP_LoadMap(void);
+void RAP_ReloadCursor(void);
 int Do_Game(void);
 int RAP_LoadWin(void);
 void ShutDown(int errcode);
