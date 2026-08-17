@@ -122,7 +122,7 @@ def main():
     hose = GlbFile()
     hose.items.append(GlbItem(0, "MODINFO_TXT", (
         "Bullet Hose\n"
-        "Single nose cannon, maximum cyclic rate. BRRRT.\n"
+        "Single nose cannon at maximum cyclic rate.\n"
     ).encode()))
     hose.items.append(GlbItem(0, "PLAYRGUN_TXT", (
         "RATE 1\n"
