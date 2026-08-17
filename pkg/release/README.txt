@@ -1,5 +1,5 @@
 ======================================================================
- RAPTOR: CALL OF THE SHADOWS  -  ENHANCED
+ RAPTOR: CALL OF THE SHADOWS  -  RECLAWED
  Native Windows engine build  (drop-in for your own copy)
 ======================================================================
 
