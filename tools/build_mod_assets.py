@@ -132,6 +132,48 @@ def main():
     (mods / "BulletHose.glb").write_bytes(hose.build())
     print("mods/BulletHose.glb: gun-config demo (RATE 1, DAMAGE 2, one muzzle)")
 
+    # Delta Sector as a mod: the recipe + ending text only. The engine
+    # synthesizes the nine maps from the player's own base data (byte-
+    # identical to install_delta_sector.py - keep RECIPES/END text in sync
+    # with that script, the release test diffs the two outputs).
+    delta_recipes = {
+        1: ("MAP1G3_MAP", "MAP1G2_MAP", "MAP1G1_MAP"), 2: ("MAP2G1_MAP", "MAP2G3_MAP", "MAP2G2_MAP"),
+        3: ("MAP3G2_MAP", "MAP3G1_MAP", "MAP3G3_MAP"), 4: ("MAP4G3_MAP", "MAP4G1_MAP", "MAP4G2_MAP"),
+        5: ("MAP5G1_MAP", "MAP5G3_MAP", "MAP5G2_MAP"), 6: ("MAP6G2_MAP", "MAP6G1_MAP", "MAP6G3_MAP"),
+        7: ("MAP7G3_MAP", "MAP7G2_MAP", "MAP7G1_MAP"), 8: ("MAP8G1_MAP", "MAP8G2_MAP", "MAP8G3_MAP"),
+        9: ("MAP9G2_MAP", "MAP9G1_MAP", "MAP9G3_MAP"),
+    }
+    delta_end = (
+        "TEXT_POS 30 13 \r\nTEXT_COLOR 84\r\n"
+        "    The Delta Sector falls silent\r\n"
+        + "".join("TEXT_DOWN 5\r\n" + line + "\r\n" for line in (
+            "behind you.  Three campaigns' worth",
+            "of defenses, thrown together into",
+            "one last desperate gauntlet - and",
+            "you flew through all of it.  The",
+            "bounty clears before you even dock.",
+            "Somewhere out beyond the charts,",
+            "someone is already hiring for the",
+            "next war.  You'll be ready.",
+        ))
+    ).encode("ascii")
+
+    delta = GlbFile()
+    delta.items.append(GlbItem(0, "MODINFO_TXT", (
+        "Delta Sector\n"
+        "Bonus 4th campaign, remixed from your own game data.\n"
+    ).encode()))
+    delta.items.append(GlbItem(0, "DELTARCP_TXT", "".join(
+        f"WAVE {w} {bot} {mid} {top}\n"
+        for w, (bot, mid, top) in sorted(delta_recipes.items())
+    ).encode()))
+    # NOT named END4_TXT: the ending text reaches the game only through the
+    # synthesized in-memory archive, so a disk-installed END4_TXT (possibly
+    # customized with the map editor) is never overridden by this mod
+    delta.items.append(GlbItem(0, "DELTAEND_TXT", delta_end))
+    (mods / "DeltaSector.glb").write_bytes(delta.build())
+    print("mods/DeltaSector.glb: recipe + ending text, maps synthesized in-engine")
+
 
 if __name__ == "__main__":
     main()

@@ -66,7 +66,8 @@ Both options can also be toggled in raptorsetup.exe under
 
 MODS: copy the included "mods" folder (and rapmenu.glb) next to
 raptor.exe, then use the MODS entry on the main menu (or press M) to
-toggle mod files on and off. Included examples:
+toggle mod files on and off. Included:
+  Delta Sector - the bonus 4th campaign (see below), on by default
   Night Ops - the night-camo Raptor on every mission
   Bullet Hose - a single max-rate center cannon
   Demo Cursor - custom menu cursor (image-replacement example)
@@ -81,12 +82,22 @@ settings otherwise.
 
 
 ----------------------------------------------------------------------
- OPTIONAL: DELTA SECTOR - a bonus 4th campaign
+ DELTA SECTOR - a bonus 4th campaign
 ----------------------------------------------------------------------
-A community-made 4th sector (9 new waves) can be added to YOUR copy.
-Because it modifies game data, it is applied to your own files locally
-- see DeltaSector-optional\README.txt. It requires the raptor.exe from
-this package.
+A community-made 4th sector (9 new waves), remixed from the game's own
+three campaigns. With the full game it simply works out of the box:
+the included mods\DeltaSector.glb makes the engine build the campaign
+from YOUR OWN data files in memory - nothing on disk is modified, and
+no game data is distributed. Pick DELTA SECTOR in the hangar's Ship
+Computer (or press D there). To remove it, toggle it off in the MODS
+menu.
+
+The old file-based installer is still included for two cases - see
+DeltaSector-optional\README.txt:
+  * you want to customize Delta's levels with the Raptor Map Editor
+    (editing needs the maps in your data files), or
+  * you want the campaign without the mods folder present.
+A file install always takes precedence over the built-in version.
 
 
 ----------------------------------------------------------------------

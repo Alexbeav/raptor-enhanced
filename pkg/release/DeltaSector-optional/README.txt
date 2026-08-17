@@ -2,6 +2,14 @@
  DELTA SECTOR  -  optional bonus 4th campaign
 ======================================================================
 
+NOTE (v1.4+): you normally do NOT need this installer. The included
+mods\DeltaSector.glb makes the Enhanced engine build the campaign from
+your own data files in memory, with nothing modified on disk. Use this
+installer only if you want the maps written into your data files -
+for editing Delta's levels with the Raptor Map Editor, or for playing
+without the mods folder. A file install always takes precedence over
+the built-in version, and both produce byte-identical maps.
+
 Adds a selectable 4th sector (9 new waves) to Raptor, remixed from the
 game's own three campaigns - lava, ocean and city terrain woven into
 new levels, with enemies drawn from across the game.

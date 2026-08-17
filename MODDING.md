@@ -80,6 +80,26 @@ muzzle-flash animation, so stacked barrels read as one gun. The shipped
 `BulletHose.glb` is a worked example: one centered barrel, maximum
 cyclic rate, double damage. Changes hot-apply with the mod toggle.
 
+## Delta Sector recipes
+
+The shipped `DeltaSector.glb` is a third kind of zero-data mod: it
+carries a `DELTARCP_TXT` item and the engine *synthesizes* the 4th
+campaign's nine maps from the player's own base data at startup,
+mounting them in memory (nothing on disk changes). Each recipe line is
+
+```
+WAVE 1 MAP1G3_MAP MAP1G2_MAP MAP1G1_MAP
+```
+
+— the wave number and the three source maps spliced bottom/middle/top
+into the new level. All nine waves must be present. If the maps already
+exist in the data files (the classic file installer, or a map-editor
+customization), the disk copies win and no synthesis happens — so
+editing Delta still works exactly as before. A `DELTAEND_TXT` item in
+the mod supplies the campaign's ending text; it enters the game as
+`END4_TXT` only through the synthesized archive, so a disk-installed
+ending is never overridden.
+
 ## Ground rules
 
 - Item and file names: 15 ASCII characters max; `.glb` extension.

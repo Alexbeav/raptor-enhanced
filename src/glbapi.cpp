@@ -53,6 +53,7 @@ typedef struct
 	uint32_t offset;
 	uint32_t flags;
 	uint32_t lock_cnt;
+	const char* memsrc;     // memory-mounted archives: persistent backing copy
 }ITEMINFO;
 
 typedef struct
@@ -452,16 +453,28 @@ GLB_Load(
 	ITEMINFO* ii;
 
 	ASSERT(filenum >= 0 && filenum < num_glbs);
-
-	handle = filedesc[filenum].handle;
-	
-	if (handle == 0)
-		return 0;
-
 	ASSERT(itemnum < (WORD)filedesc[filenum].items);
+
+	if (filedesc[filenum].item == NULL)
+		return 0;
 
 	ii = filedesc[filenum].item;
 	ii += itemnum;
+
+	// memory-mounted archives have no file handle; the backing copy
+	// outlives any cache eviction (GLB_FreeItem just drops the cache)
+	if (ii->memsrc != NULL)
+	{
+		if (inmem != NULL && inmem != ii->memsrc)
+			memcpy(inmem, ii->memsrc, ii->size);
+
+		return ii->size;
+	}
+
+	handle = filedesc[filenum].handle;
+
+	if (handle == 0)
+		return 0;
 
 	if (inmem != NULL)
 	{
@@ -1080,6 +1093,131 @@ GLB_MountPath(
 	}
 
 	return filenum;
+}
+
+/***************************************************************************
+ GLB_MountMemory() - mounts a set of in-memory items as an archive. The
+ data pointers are adopted (never freed) and back every later fetch, so
+ the items behave like any file item across GLB_FreeItem/GLB_FreeAll.
+ Returns the filenum, or -1 when no slot is free.
+ ***************************************************************************/
+int
+GLB_MountMemory(
+	const char* const* names,
+	char* const* datas,
+	const int* sizes,
+	int count
+)
+{
+	FILEDESC* fd;
+	int filenum, i;
+
+	if (num_glbs >= MAX_GLB_FILES || count <= 0 || count > 0xFFFF ||
+		names == NULL || datas == NULL || sizes == NULL)
+		return -1;
+
+	for (i = 0; i < count; i++)
+	{
+		if (names[i] == NULL || strlen(names[i]) > 15 ||
+			datas[i] == NULL || sizes[i] <= 0)
+			return -1;
+	}
+
+	filenum = num_glbs;
+	fd = &filedesc[filenum];
+	memset(fd, 0, sizeof(FILEDESC));
+
+	strcpy(fd->filepath, "<memory>");
+	fd->items = count;
+	fd->item = (ITEMINFO*)calloc(count, sizeof(ITEMINFO));
+
+	if (fd->item == NULL)
+		EXIT_Error("GLB_MountMemory: memory");
+
+	for (i = 0; i < count; i++)
+	{
+		strncpy(fd->item[i].name, names[i], sizeof(fd->item[i].name) - 1);
+		fd->item[i].memsrc = datas[i];
+		fd->item[i].size = (uint32_t)sizes[i];
+	}
+
+	num_glbs++;
+
+	return filenum;
+}
+
+/***************************************************************************
+ GLB_UpdateMemory() - replaces the contents of a memory-mounted archive.
+ Only valid at safe points (no item of the archive locked); the old item
+ table, cached copies and backing buffers are freed. Returns 0 on failure
+ (the archive is left unchanged).
+ ***************************************************************************/
+int
+GLB_UpdateMemory(
+	int filenum,
+	const char* const* names,
+	char* const* datas,
+	const int* sizes,
+	int count
+)
+{
+	FILEDESC* fd;
+	ITEMINFO* item;
+	int i;
+
+	if (filenum < 0 || filenum >= num_glbs ||
+		count <= 0 || count > 0xFFFF ||
+		names == NULL || datas == NULL || sizes == NULL)
+		return 0;
+
+	fd = &filedesc[filenum];
+
+	if (fd->handle != NULL || strcmp(fd->filepath, "<memory>"))
+		return 0;
+
+	for (i = 0; i < fd->items; i++)
+	{
+		if (fd->item[i].flags & ITF_LOCKED)
+			return 0;
+	}
+
+	for (i = 0; i < count; i++)
+	{
+		if (names[i] == NULL || strlen(names[i]) > 15 ||
+			datas[i] == NULL || sizes[i] <= 0)
+			return 0;
+	}
+
+	item = (ITEMINFO*)calloc(count, sizeof(ITEMINFO));
+
+	if (item == NULL)
+		EXIT_Error("GLB_UpdateMemory: memory");
+
+	for (i = 0; i < fd->items; i++)
+	{
+		if (fd->item[i].vm_mem.obj != NULL)
+		{
+			if (fVmem)
+				VM_Free(fd->item[i].vm_mem.obj);
+			else
+				free(fd->item[i].vm_mem.obj);
+		}
+
+		free((void*)fd->item[i].memsrc);
+	}
+
+	free(fd->item);
+	fd->item = item;
+	fd->items = count;
+
+	for (i = 0; i < count; i++)
+	{
+		strncpy(fd->item[i].name, names[i], sizeof(fd->item[i].name) - 1);
+		fd->item[i].memsrc = datas[i];
+		fd->item[i].size = (uint32_t)sizes[i];
+	}
+
+	return 1;
 }
 
 /***************************************************************************

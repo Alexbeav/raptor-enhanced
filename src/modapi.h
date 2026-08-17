@@ -22,7 +22,8 @@ void MOD_ApplyPending(void);            // rebuild overrides; safe points only
 int MOD_PendingChanges(void);           // toggles not yet applied?
 int MOD_Resolve(int handle);            // apply override/alias redirects
 int MOD_MenuAvailable(void);            // rapmenu.glb mounted?
-char *MOD_FilterWindowData(int handle, char *data, int *size); // MAIN_SWD patch
+char *MOD_FilterWindowData(int handle, char *data, int *size); // SWD patches
+void MOD_DumpDeltaMaps(void);           // DUMPDELTA flag: write synth maps
 
 int MOD_Count(void);
 const char *MOD_Name(int i);            // display name from manifest

@@ -1351,6 +1351,32 @@ RAP_InitMem(
 }
 
 /***************************************************************************
+RAP_DetectSector4() - Delta Sector present? ( 4th campaign, community
+add-on ). Require the complete campaign: treating a partial install as
+playable only postpones the failure until a missing wave is loaded.
+Re-run whenever the mod layer changes what names resolve.
+ ***************************************************************************/
+void
+RAP_DetectSector4(
+    void
+)
+{
+    char delta_map_name[16];
+    int loop, delta_maps;
+
+    delta_maps = 0;
+    for (loop = 1; loop <= 9; loop++)
+    {
+        snprintf(delta_map_name, sizeof(delta_map_name), "MAP%dG4_MAP", loop);
+        if (GLB_GetItemID(delta_map_name) != -1)
+            delta_maps++;
+    }
+    sector4_installed = (delta_maps == 9);
+    if (delta_maps && !sector4_installed)
+        LOG_Printf("Delta Sector disabled: found %d of 9 maps", delta_maps);
+}
+
+/***************************************************************************
 main() -
  ***************************************************************************/
 int 
@@ -1360,8 +1386,7 @@ main(
 )
 {
     char *var1, *tptr, *pal;
-    int loop, numfiles, ptrflag, item, delta_maps;
-    char delta_map_name[16];
+    int loop, numfiles, ptrflag, item;
 
     var1 = getenv("S_HOST");
 
@@ -1563,7 +1588,15 @@ main(
 #endif //_WIN32 || __linux__ || __APPLE__
     
     MOD_Startup();
-    
+
+    RAP_DetectSector4();
+
+    if (argv[1] && !strcmp(argv[1], "DUMPDELTA"))
+    {
+        MOD_DumpDeltaMaps();
+        exit(0);
+    }
+
     if (reg_flag)
     {
         tptr = GLB_GetItem(FILE000_ATENTION_TXT);
@@ -1608,20 +1641,6 @@ main(
         }
     }
     
-    // = DETECT DELTA SECTOR ( 4th campaign, community add-on ) ============
-    // Require the complete campaign. Treating a partial install as playable
-    // only postpones the failure until a missing wave is loaded.
-    delta_maps = 0;
-    for (loop = 1; loop <= 9; loop++)
-    {
-        snprintf(delta_map_name, sizeof(delta_map_name), "MAP%dG4_MAP", loop);
-        if (GLB_GetItemID(delta_map_name) != -1)
-            delta_maps++;
-    }
-    sector4_installed = (delta_maps == 9);
-    if (delta_maps && !sector4_installed)
-        LOG_Printf("Delta Sector disabled: found %d of 9 maps", delta_maps);
-
     // = LOAD IN FLAT LIBS  =========================
     for (loop = 0; loop < 4; loop++)
     {

@@ -49,6 +49,7 @@
     <ClInclude Include="..\src\m_misc.h" />
     <ClInclude Include="..\src\objects.h" />
     <ClInclude Include="..\src\dbopl.h" />
+    <ClInclude Include="..\src\delta.h" />
     <ClInclude Include="..\src\modapi.h" />
     <ClInclude Include="..\src\opl_core.h" />
     <ClInclude Include="..\src\opl3.h" />
@@ -98,6 +99,7 @@
     <ClCompile Include="..\src\m_misc.cpp" />
     <ClCompile Include="..\src\objects.cpp" />
     <ClCompile Include="..\src\dbopl.cpp" />
+    <ClCompile Include="..\src\delta.cpp" />
     <ClCompile Include="..\src\modapi.cpp" />
     <ClCompile Include="..\src\opl_core.cpp" />
     <ClCompile Include="..\src\opl3.cpp" />

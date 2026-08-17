@@ -15,7 +15,7 @@ typedef struct
 	uint16_t filenum;
 }ITEMS;
 
-#define  MAX_GLB_FILES       0x000F
+#define  MAX_GLB_FILES       0x0010
 #define  SEED                0x0019
 
 #define GLB_NORMAL   0
@@ -43,6 +43,8 @@ int GLB_FileItemCount(int filenum);
 const char *GLB_FileItemName(int filenum, int itemnum);
 const char *GLB_GetExePath(void);
 int GLB_MountPath(const char *path);
+int GLB_MountMemory(const char *const *names, char *const *datas, const int *sizes, int count);
+int GLB_UpdateMemory(int filenum, const char *const *names, char *const *datas, const int *sizes, int count);
 void GLB_SetFileEnabled(int filenum, int enabled);
 //char *GLB_GetPtr(int handle);
 //void GLB_SetItemPointer(int a1, char* a2);

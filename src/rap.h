@@ -29,6 +29,7 @@ extern char *palette;
 extern int ingameflag;
 extern int gameflag[4];
 extern int sector4_installed;
+void RAP_DetectSector4(void);
 
 void LOG_Init(void);
 void LOG_Printf(const char *fmt, ...);

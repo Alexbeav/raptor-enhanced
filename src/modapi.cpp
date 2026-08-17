@@ -28,6 +28,8 @@
 #include "fileids.h"
 #include "kbdapi.h"
 #include "shots.h"
+#include "delta.h"
+#include "rap.h"
 
 namespace fs = std::filesystem;
 
@@ -49,6 +51,8 @@ static int base_files;
 static int menu_available;
 static int pending_changes;
 static int override_generation;
+static int delta_filenum = -1;   // memory archive of synthesized Delta maps
+static int delta_owner = -1;     // mod whose toggle gates that archive
 
 // ---------------------------------------------------------------------------
 // base-data occurrence lookups
@@ -264,6 +268,205 @@ static int ModsConflict(const ModEntry& a, const ModEntry& b)
 }
 
 // ---------------------------------------------------------------------------
+// Delta Sector synthesis: a mod carrying a DELTARCP_TXT recipe gets the
+// 4th campaign's nine maps built from the player's own base data and
+// mounted as a memory archive gated by the mod's toggle. A disk install
+// (the classic installer, or a map-editor customization) always wins:
+// base-file items shadow the memory archive in every name search.
+// ---------------------------------------------------------------------------
+
+static int FindModItem(const ModEntry& mod, const char* name)
+{
+    int items = GLB_FileItemCount(mod.filenum);
+
+    for (int j = 0; j < items; j++)
+    {
+        if (!strcmp(GLB_FileItemName(mod.filenum, j), name))
+            return j;
+    }
+
+    return -1;
+}
+
+// raw read of one of a mod's own items (never MOD_Resolved; adopted copy)
+static char* ReadModItem(const ModEntry& mod, int itemnum, int* out_size)
+{
+    int size = GLB_Load(NULL, mod.filenum, itemnum);
+
+    if (size <= 0)
+        return NULL;
+
+    char* data = (char*)malloc(size);
+
+    if (!data)
+        EXIT_Error("mods: memory");
+
+    GLB_Load(data, mod.filenum, itemnum);
+    *out_size = size;
+
+    return data;
+}
+
+static int DiskDeltaMaps(void)
+{
+    char name[16];
+    int disk = 0;
+
+    for (int w = 1; w <= 9; w++)
+    {
+        snprintf(name, sizeof(name), "MAP%dG4_MAP", w);
+
+        if (OccHandle(name, 0) != -1)
+            disk++;
+    }
+
+    return disk;
+}
+
+// Every recipe-carrying mod gets the campaign's names as additions BEFORE
+// conflict enforcement, so two Delta providers register as conflicting.
+static void RegisterDeltaAdditions(void)
+{
+    if (DiskDeltaMaps() == 9)
+        return;
+
+    char name[16];
+
+    for (auto& mod : mod_list)
+    {
+        if (FindModItem(mod, "DELTARCP_TXT") == -1)
+            continue;
+
+        for (int w = 1; w <= 9; w++)
+        {
+            snprintf(name, sizeof(name), "MAP%dG4_MAP", w);
+
+            if (OccHandle(name, 0) == -1)
+                mod.additions.push_back(name);
+        }
+
+        if (OccHandle("END4_TXT", 0) == -1)
+            mod.additions.push_back("END4_TXT");
+    }
+}
+
+// Startup counterpart of MOD_Toggle's guard: mods enabled from SETUP.INI
+// (or by default) that fight over the same items must not start together.
+// Earlier-mounted (alphabetical) wins, deterministically.
+static void EnforceStartupConflicts(void)
+{
+    for (size_t i = 0; i < mod_list.size(); i++)
+    {
+        if (!mod_list[i].enabled)
+            continue;
+
+        for (size_t j = 0; j < i; j++)
+        {
+            if (!mod_list[j].enabled)
+                continue;
+
+            if (ModsConflict(mod_list[i], mod_list[j]))
+            {
+                mod_list[i].enabled = 0;
+                INI_PutPreferenceLong("Mods", mod_list[i].stem.c_str(), 0);
+                LOG_Printf("mod %s: disabled at startup, conflicts with %s",
+                    mod_list[i].stem.c_str(), mod_list[j].stem.c_str());
+                break;
+            }
+        }
+    }
+}
+
+// build (or rebuild, at a safe point) the memory archive from one mod's
+// recipe; returns the archive filenum or -1
+static int SynthFromMod(int owner, int reuse_filenum)
+{
+    ModEntry& mod = mod_list[owner];
+    int rcp = FindModItem(mod, "DELTARCP_TXT");
+
+    if (rcp == -1)
+        return -1;
+
+    int size = 0;
+    char* recipe = ReadModItem(mod, rcp, &size);
+
+    if (!recipe)
+        return -1;
+
+    char* end_text = NULL;
+    int end_len = 0;
+    int end_item = FindModItem(mod, "DELTAEND_TXT");
+
+    if (end_item != -1)
+        end_text = ReadModItem(mod, end_item, &end_len);
+
+    int fn = DELTA_Synthesize(recipe, size, base_files, end_text, end_len,
+        reuse_filenum);
+    free(recipe);
+
+    if (fn != -1)
+        LOG_Printf("mod %s: Delta Sector synthesized from base data",
+            mod.stem.c_str());
+
+    return fn;
+}
+
+static void SynthDelta(void)
+{
+    if (DiskDeltaMaps() == 9)
+        return;
+
+    // owner: the first enabled recipe mod, else the first recipe mod
+    // (so a mod disabled now can still be toggled on later this session)
+    int first = -1, owner = -1;
+
+    for (int i = 0; i < (int)mod_list.size(); i++)
+    {
+        if (FindModItem(mod_list[i], "DELTARCP_TXT") == -1)
+            continue;
+
+        if (first == -1)
+            first = i;
+
+        if (owner == -1 && mod_list[i].enabled)
+            owner = i;
+        else if (owner != -1 || i != first)
+            LOG_Printf("mod %s: Delta recipe ignored, %s already provides the campaign",
+                mod_list[i].stem.c_str(), mod_list[owner != -1 ? owner : first].stem.c_str());
+    }
+
+    if (owner == -1)
+        owner = first;
+
+    if (owner == -1)
+        return;
+
+    // the ending text is deliberately NOT named END4_TXT in the mod file:
+    // it enters the game only through the synthesized archive, so a
+    // disk-installed (possibly customized) END4_TXT always wins
+    delta_filenum = SynthFromMod(owner, -1);
+
+    if (delta_filenum != -1)
+        delta_owner = owner;
+}
+
+// all nine campaign maps resolvable right now (disk or enabled synthesis)?
+static int DeltaAvailable(void)
+{
+    char name[16];
+
+    for (int w = 1; w <= 9; w++)
+    {
+        snprintf(name, sizeof(name), "MAP%dG4_MAP", w);
+
+        if (GLB_GetItemID(name) == -1)
+            return 0;
+    }
+
+    return 1;
+}
+
+// ---------------------------------------------------------------------------
 // public api
 // ---------------------------------------------------------------------------
 
@@ -358,6 +561,10 @@ void MOD_Startup(void)
         mod_list.push_back(mod);
     }
 
+    RegisterDeltaAdditions();
+    EnforceStartupConflicts();
+    SynthDelta();
+
     MOD_ApplyPending();
 
     if (!mod_list.empty())
@@ -395,6 +602,38 @@ void MOD_ApplyPending(void)
             }
         }
     }
+
+    // the synthesized Delta archive follows its owning mod's toggle; if a
+    // DIFFERENT recipe mod is now the enabled provider, rebuild the archive
+    // from its recipe (this is a safe point - GLB_UpdateMemory refuses if
+    // any of the archive's items is still locked)
+    if (delta_filenum != -1)
+    {
+        int want = -1;
+
+        for (int i = 0; i < (int)mod_list.size(); i++)
+        {
+            if (mod_list[i].enabled &&
+                FindModItem(mod_list[i], "DELTARCP_TXT") != -1)
+            {
+                want = i;
+                break;
+            }
+        }
+
+        if (want != -1 && want != delta_owner)
+        {
+            if (SynthFromMod(want, delta_filenum) == delta_filenum)
+                delta_owner = want;
+            else
+                pending_changes = 1;   // safe point violated? retry later
+        }
+
+        GLB_SetFileEnabled(delta_filenum,
+            delta_owner >= 0 && mod_list[delta_owner].enabled);
+    }
+
+    RAP_DetectSector4();
 
     LOG_Printf("mods: applied - %d of %d enabled, %d overrides",
         on, (int)mod_list.size(), (int)overrides.size());
@@ -496,13 +735,13 @@ void MOD_Toggle(int i)
 // SHIPCOMP patch, done in memory on the disk-format (SFIELD32) data.
 // ---------------------------------------------------------------------------
 
-char* MOD_FilterWindowData(int handle, char* data, int* size)
+static char* FilterMainMenu(char* data, int* size)
 {
     static char* cached;
     static int cached_size;
     static int cached_generation = -1;
 
-    if (!menu_available || handle != FILE132_MAIN_SWD)
+    if (!data || *size < (int)sizeof(SWIN))
         return data;
 
     if (!cached || cached_generation != override_generation)
@@ -519,6 +758,15 @@ char* MOD_FilterWindowData(int handle, char* data, int* size)
         SWIN* h = (SWIN*)data;
         int fldofs = LE_LONG(h->fldofs);
         int n = LE_LONG(h->numflds);
+
+        // a mod may override MAIN_SWD with arbitrary data; only patch a
+        // window whose header describes a well-formed field table
+        // (64-bit math: file-supplied offsets must not wrap int)
+        if (n < 1 || n > 256 ||
+            fldofs < (int)sizeof(SWIN) || fldofs > *size ||
+            (int64_t)fldofs + (int64_t)n * (int64_t)sizeof(SFIELD32) > (int64_t)*size)
+            return data;
+
         int textofs = fldofs + n * (int)sizeof(SFIELD32);
         int textlen = *size - textofs;
         const char label[] = "MODS";
@@ -573,4 +821,148 @@ char* MOD_FilterWindowData(int handle, char* data, int* size)
 
     *size = cached_size;
     return cached;
+}
+
+// ---------------------------------------------------------------------------
+// SHIPCOMP_SWD runtime patch: when the Delta campaign is available but the
+// window on disk is unpatched (12 fields), append the GAME4 row and respace
+// the sector buttons - the exact transform install_delta_sector.py applies
+// on disk, done in memory. Field index 12 = winids.h COMP_GAME4.
+// ---------------------------------------------------------------------------
+
+static char* FilterShipComp(char* data, int* size)
+{
+    static char* cached;
+    static int cached_size;
+    static int cached_generation = -1;
+
+    if (!data || *size < (int)sizeof(SWIN))
+        return data;
+
+    if (!DeltaAvailable())
+        return data;
+
+    SWIN* h = (SWIN*)data;
+    int n = LE_LONG(h->numflds);
+
+    if (n != 12)
+        return data;      // already carries the installer's disk patch
+
+    if (cached_generation != override_generation)
+    {
+        // old buffer may back a live window; leak it (see FilterMainMenu)
+        cached = NULL;
+        cached_generation = override_generation;
+    }
+
+    if (!cached)
+    {
+        int fldofs = LE_LONG(h->fldofs);
+        int txtofs = LE_LONG(h->txtofs);
+
+        // same caution as FilterMainMenu: the item may come from a mod.
+        // Text must start right after the field table (every shipped and
+        // installer-patched SHIPCOMP does) - the rebuild does not preserve
+        // a gap between the two, so any other layout is left alone
+        if (fldofs < (int)sizeof(SWIN) || fldofs > *size ||
+            (int64_t)fldofs + 12 * (int64_t)sizeof(SFIELD32) > (int64_t)*size ||
+            txtofs != fldofs + 12 * (int)sizeof(SFIELD32) ||
+            txtofs > *size)
+            return data;
+
+        int textlen = *size - txtofs;
+        int new_txtofs = fldofs + 13 * (int)sizeof(SFIELD32);
+        const char label[] = "DELTA SECTOR";
+
+        cached_size = new_txtofs + textlen + (int)sizeof(label);
+        cached = (char*)calloc(1, cached_size);
+
+        if (!cached)
+            EXIT_Error("FilterShipComp: memory");
+
+        memcpy(cached, data, fldofs);
+        SWIN* nh = (SWIN*)cached;
+        nh->numflds = LE_LONG(13);
+        nh->txtofs = LE_LONG(new_txtofs);
+
+        SFIELD32* srcf = (SFIELD32*)(data + fldofs);
+        SFIELD32* dstf = (SFIELD32*)(cached + fldofs);
+
+        for (int i = 0; i < 12; i++)
+        {
+            memcpy(&dstf[i], &srcf[i], sizeof(SFIELD32));
+            dstf[i].txtoff = LE_LONG(LE_LONG(dstf[i].txtoff) + (int)sizeof(SFIELD32));
+        }
+
+        // the new row is a clone of the OUTER REGIONS button; the engine
+        // re-resolves its pic and font by name at window init
+        memcpy(&dstf[12], &srcf[10], sizeof(SFIELD32));
+        memset(dstf[12].name, 0, sizeof(dstf[12].name));
+        strcpy(dstf[12].name, "GAME4");
+
+        // respace the five stacked rows to make room
+        dstf[4].y = LE_LONG(39);
+        dstf[5].y = LE_LONG(61);
+        dstf[10].y = LE_LONG(83);
+        dstf[12].y = LE_LONG(105);
+        dstf[11].y = LE_LONG(127);
+
+        dstf[12].txtoff = LE_LONG((new_txtofs + textlen) - (fldofs + 12 * (int)sizeof(SFIELD32)));
+
+        memcpy(cached + new_txtofs, data + txtofs, textlen);
+        memcpy(cached + new_txtofs + textlen, label, sizeof(label));
+    }
+
+    *size = cached_size;
+    return cached;
+}
+
+char* MOD_FilterWindowData(int handle, char* data, int* size)
+{
+    if (handle == FILE132_MAIN_SWD && menu_available)
+        return FilterMainMenu(data, size);
+
+    if (handle == FILE133_SHIPCOMP_SWD)
+        return FilterShipComp(data, size);
+
+    return data;
+}
+
+// hidden DUMPDELTA support: write each synthesized map next to the exe so
+// the release test can diff them against the Python installer's output
+void MOD_DumpDeltaMaps(void)
+{
+    if (delta_filenum == -1)
+    {
+        printf("delta: nothing synthesized (disk install present, or no recipe mod)\n");
+        return;
+    }
+
+    int items = GLB_FileItemCount(delta_filenum);
+
+    for (int i = 0; i < items; i++)
+    {
+        int handle = (delta_filenum << 16) | i;
+        int isize = GLB_ItemSize(handle);
+        char* data = GLB_GetItem(handle);
+        char fname[32];
+
+        snprintf(fname, sizeof(fname), "%s.bin", GLB_FileItemName(delta_filenum, i));
+        GLB_SaveFile(fname, data, isize);
+        printf("%s: %d bytes\n", fname, isize);
+        GLB_FreeItem(handle);
+    }
+
+    // also dump the runtime-patched ship computer window for diffing
+    // against the installer's on-disk transform
+    {
+        int isize = GLB_ItemSize(FILE133_SHIPCOMP_SWD);
+        char* data = GLB_GetItem(FILE133_SHIPCOMP_SWD);
+        char* patched = MOD_FilterWindowData(FILE133_SHIPCOMP_SWD, data, &isize);
+        char fname[32] = "SHIPCOMP_SWD.bin";
+
+        GLB_SaveFile(fname, patched, isize);
+        printf("%s: %d bytes\n", fname, isize);
+        GLB_FreeItem(FILE133_SHIPCOMP_SWD);
+    }
 }
