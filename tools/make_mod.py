@@ -1,5 +1,5 @@
 """make_mod.py - pack a folder of PNGs (and an optional manifest) into a
-Raptor Enhanced mod .GLB.
+Raptor Reclawed mod .GLB.
 
 Usage:
     python tools/make_mod.py <mod-folder> [-o Out.glb] [--game <raptor dir>]

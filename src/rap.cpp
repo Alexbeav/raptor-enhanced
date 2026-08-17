@@ -128,7 +128,7 @@ void LOG_Init(void)
 
     snprintf(path, sizeof(path), "%sRAPTOR.LOG", cdpath);
     log_file = fopen(path, "w");
-    LOG_Printf("Raptor Enhanced start; save path: %s", cdpath);
+    LOG_Printf("Raptor Reclawed start; save path: %s", cdpath);
 }
 
 char* g_highmem;

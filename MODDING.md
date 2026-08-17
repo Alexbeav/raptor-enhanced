@@ -1,6 +1,6 @@
-# Modding Raptor Enhanced
+# Modding Raptor Reclawed
 
-Raptor Enhanced loads **mod files**: `.GLB` archives dropped into a `mods\`
+Raptor Reclawed loads **mod files**: `.GLB` archives dropped into a `mods\`
 folder next to the game data. The main menu's **MODS** entry (or `M`) lists
 them; toggles save to `SETUP.INI` and apply instantly at the main menu
 (mid-mission toggles apply when the mission ends). Up to 8 mods load at

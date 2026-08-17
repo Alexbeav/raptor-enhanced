@@ -3,7 +3,7 @@
 ======================================================================
 
 NOTE (v1.4+): you normally do NOT need this installer. The included
-mods\DeltaSector.glb makes the Enhanced engine build the campaign from
+mods\DeltaSector.glb makes the Reclawed engine build the campaign from
 your own data files in memory, with nothing modified on disk. Use this
 installer only if you want the maps written into your data files -
 for editing Delta's levels with the Raptor Map Editor, or for playing
@@ -17,7 +17,7 @@ new levels, with enemies drawn from across the game.
 IMPORTANT
   * This modifies YOUR game data files (FILE0001.GLB and FILE0004.GLB).
     The installer backs them up first (.bak) - keep those backups.
-  * It requires the Enhanced raptor.exe from this package (the new
+  * It requires the Reclawed raptor.exe from this package (the new
     engine adds the 4th-sector support). The original DOS/Steam
     executable will simply ignore the extra maps.
   * It needs the FULL game (FILE0001 through FILE0004), not shareware.

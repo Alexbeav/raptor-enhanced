@@ -8,7 +8,7 @@ backups, and writes patched copies that add:
   * 9 new waves (MAP1G4..MAP9G4), remixed from the game's own terrain.
 
 No game data is distributed with this script - it only transforms the files
-you already own. Requires the Enhanced raptor.exe (Delta Sector needs the
+you already own. Requires the Reclawed raptor.exe (Delta Sector needs the
 new engine); the stock game will ignore the extra maps.
 
 Usage:

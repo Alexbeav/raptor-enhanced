@@ -1,4 +1,4 @@
-# Raptor Enhanced
+# Raptor Reclawed
 
 A fork of the open-source Raptor engine port ([skynettx/raptor](https://github.com/skynettx/raptor),
 based on the reverse-engineered codebase by nukeykt), extended with engine
@@ -18,7 +18,7 @@ the browser. The development history of both projects is chronicled in its
 ## Quick start
 
 1. Download the latest package from
-   [Raptor Enhanced releases](https://github.com/Alexbeav/raptor-enhanced/releases/latest) —
+   [Raptor Reclawed releases](https://github.com/Alexbeav/raptor-reclawed/releases/latest) —
    a Windows zip or a Linux x64 tarball.
 2. Extract it into a folder containing your legally obtained Raptor v1.2+
    `FILE0000.GLB`–`FILE0004.GLB` data files, then run `raptor.exe`

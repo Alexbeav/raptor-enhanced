@@ -13,7 +13,7 @@ engine refinements and support for the optional Delta Sector campaign
 (src/rap.cpp, src/windows.cpp, src/winids.h, src/i_video.cpp,
 src/gfxapi.* and related files).
 
-    SOURCE: https://github.com/Alexbeav/raptor-enhanced
+    SOURCE: https://github.com/Alexbeav/raptor-reclawed
 
 If you received this package without a source URL, request the source
 from whoever gave it to you - the GPL entitles you to it.
