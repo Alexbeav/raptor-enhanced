@@ -31,6 +31,7 @@ void GLB_FreeItem(int handle);
 void GLB_FreeAll(void);
 int GLB_GetItemID(const char *in_name);
 int GLB_ItemSize(int handle);
+int GLB_ValidItem(int handle);
 void GLB_EnCrypt(const char *key, void *buf, int length);
 void GLB_DeCrypt(const char *key, void *buf, int length);
 int GLB_ReadFile(const char *name, char *buffer);

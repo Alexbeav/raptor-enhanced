@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stddef.h>
 #include "common.h"
 #include "shots.h"
 #include "glbapi.h"
@@ -154,8 +155,14 @@ static struct
 
 #define STOCK_FORWARD_HITS 1     // shot_lib[S_FORWARD_GUNS].hits in SHOTS_Init
 
-void
-SHOTS_LoadGunConfig(
+// Copy of the shot table as SHOTS_Init built it, so a WEAPONS_TXT override
+// can be undone when its mod is switched off. Also restores pic[]/h, which
+// a LUMP or FRAMES override re-points.
+static SHOT_LIB shot_lib_stock[LAST_WEAPON + 1];
+static int      shot_lib_saved;
+
+static void
+LoadPlayerGun(
     void
 )
 {
@@ -257,6 +264,249 @@ SHOTS_LoadGunConfig(
         LOG_Printf("player gun config: %d muzzle(s), rate %d, damage %d",
             playrgun.count, playrgun.rate, playrgun.damage);
     }
+}
+
+/***************************************************************************
+Moddable special weapons: a mod may provide a WEAPONS_TXT item whose lines
+are each
+
+    <WEAPON> <FIELD> <value>
+
+e.g. "PLASMA DAMAGE 4" or "DEATHRAY RATE 3". Every field of SHOT_LIB that
+is not runtime state or derived from the art is writable, including the
+lump number - so a mod can point a weapon at completely different sprites.
+Nothing here is balanced or sanity-checked beyond memory safety: bad
+numbers make bad weapons, which is the point.
+
+Applied over the stock table on every mod hot-apply, so switching the mod
+off restores the originals.
+ ***************************************************************************/
+static const struct
+{
+    const char *name;
+    int         idx;
+} weapon_names[] = {
+    { "FORWARD",    S_FORWARD_GUNS  },
+    { "PLASMA",     S_PLASMA_GUNS   },
+    { "MICRO",      S_MICRO_MISSLE  },
+    { "DUMBFIRE",   S_DUMB_MISSLE   },
+    { "MINIGUN",    S_MINI_GUN      },
+    { "TURRET",     S_TURRET        },
+    { "PODS",       S_MISSLE_PODS   },
+    { "AIRMISSLE",  S_AIR_MISSLE    },
+    { "GRDMISSLE",  S_GRD_MISSLE    },
+    { "BOMB",       S_BOMB          },
+    { "ENERGYGRAB", S_ENERGY_GRAB   },
+    { "MEGABOMB",   S_MEGA_BOMB     },
+    { "PULSE",      S_PULSE_CANNON  },
+    { "LASER",      S_FORWARD_LASER },
+    { "DEATHRAY",   S_DEATH_RAY     },
+};
+
+#define WFIELD(f) offsetof(SHOT_LIB, f)
+
+static const struct
+{
+    const char *name;
+    size_t      off;
+    int         art;              // TRUE = re-lock the sprites afterwards
+} weapon_fields[] = {
+    { "DAMAGE",     WFIELD(hits),       0 },
+    { "RATE",       WFIELD(shoot_rate), 0 },
+    { "SPEED",      WFIELD(speed),      0 },
+    { "MAXSPEED",   WFIELD(maxspeed),   0 },
+    { "SHADOW",     WFIELD(shadow),     0 },
+    { "SMOKE",      WFIELD(smoke),      0 },
+    { "DELAY",      WFIELD(delayflag),  0 },
+    { "PLOT",       WFIELD(use_plot),   0 },
+    { "MOVE",       WFIELD(move_flag),  0 },
+    { "HITTYPE",    WFIELD(ht),         0 },
+    { "FOLLOWX",    WFIELD(fplrx),      0 },
+    { "FOLLOWY",    WFIELD(fplry),      0 },
+    { "TRACK",      WFIELD(meffect),    0 },
+    { "BEAM",       WFIELD(beam),       0 },
+    { "LUMP",       WFIELD(lumpnum),    1 },
+    { "FRAMES",     WFIELD(numframes),  1 },
+    { "STARTFRAME", WFIELD(startframe), 1 },
+};
+
+#define NUM_WEAPON_NAMES  ((int)(sizeof(weapon_names) / sizeof(weapon_names[0])))
+#define NUM_WEAPON_FIELDS ((int)(sizeof(weapon_fields) / sizeof(weapon_fields[0])))
+#define MAX_SHOT_FRAMES   10      // SHOT_LIB::pic[10]
+
+/***************************************************************************
+NameEq () - ASCII case-insensitive compare. MSVC spells strcasecmp
+_stricmp, so mod configs get their own rather than an ifdef per compiler.
+ ***************************************************************************/
+static int
+NameEq(
+    const char *a,
+    const char *b
+)
+{
+    for (; *a && *b; a++, b++)
+    {
+        int ca = (*a >= 'a' && *a <= 'z') ? *a - 32 : *a;
+        int cb = (*b >= 'a' && *b <= 'z') ? *b - 32 : *b;
+
+        if (ca != cb)
+            return 0;
+    }
+
+    return *a == *b;
+}
+
+/***************************************************************************
+RelinkShotArt () - Re-locks a weapon's frames after LUMP/FRAMES changed.
+
+Returns FALSE and touches nothing if any frame is out of range: the caller
+restores that weapon from stock rather than shipping dangling pointers.
+ ***************************************************************************/
+static int
+RelinkShotArt(
+    SHOT_LIB *slib
+)
+{
+    char *pic[MAX_SHOT_FRAMES];
+    int i;
+
+    if (slib->numframes < 1)
+        slib->numframes = 1;
+
+    if (slib->numframes > MAX_SHOT_FRAMES)
+        slib->numframes = MAX_SHOT_FRAMES;
+
+    for (i = 0; i < slib->numframes; i++)
+    {
+        if (!GLB_ValidItem(slib->lumpnum + i))
+            return 0;
+
+        pic[i] = (char*)GLB_LockItem(slib->lumpnum + i);
+
+        if (!pic[i])
+            return 0;
+    }
+
+    for (i = 0; i < slib->numframes; i++)
+        slib->pic[i] = pic[i];
+
+    if (slib->startframe < 0 || slib->startframe >= slib->numframes)
+        slib->startframe = 0;
+
+    slib->h = (GFX_PIC*)slib->pic[0];
+    slib->hlx = LE_LONG(slib->h->width) >> 1;
+    slib->hly = LE_LONG(slib->h->height) >> 1;
+
+    return 1;
+}
+
+/***************************************************************************
+LoadWeaponConfig () - Applies WEAPONS_TXT over the stock shot table.
+ ***************************************************************************/
+static void
+LoadWeaponConfig(
+    void
+)
+{
+    char line[64], wname[24], fname[24];
+    char *data;
+    int item, size, pos, len, value, w, f, i;
+    int touched[LAST_WEAPON + 1];
+    int applied = 0;
+
+    item = GLB_GetItemID("WEAPONS_TXT");
+
+    if (item == -1)
+        return;
+
+    size = GLB_ItemSize(item);
+    data = GLB_GetItem(item);
+
+    if (!data || size <= 0)
+        return;
+
+    memset(touched, 0, sizeof(touched));
+
+    for (pos = 0; pos < size; )
+    {
+        for (len = 0; pos + len < size && data[pos + len] != NEWLINE_CH && len < (int)sizeof(line) - 1; len++)
+            line[len] = data[pos + len];
+
+        line[len] = 0;
+
+        while (pos + len < size && data[pos + len] != NEWLINE_CH)
+            len++;
+
+        pos += len + 1;
+
+        if (sscanf(line, "%23s %23s %d", wname, fname, &value) != 3)
+            continue;
+
+        for (w = 0; w < NUM_WEAPON_NAMES; w++)
+            if (NameEq(wname, weapon_names[w].name))
+                break;
+
+        if (w == NUM_WEAPON_NAMES)
+        {
+            LOG_Printf("weapons config: unknown weapon '%s'", wname);
+            continue;
+        }
+
+        for (f = 0; f < NUM_WEAPON_FIELDS; f++)
+            if (NameEq(fname, weapon_fields[f].name))
+                break;
+
+        if (f == NUM_WEAPON_FIELDS)
+        {
+            LOG_Printf("weapons config: unknown field '%s'", fname);
+            continue;
+        }
+
+        *(int*)((char*)&shot_lib[weapon_names[w].idx] + weapon_fields[f].off) = value;
+
+        if (weapon_fields[f].art)
+            touched[weapon_names[w].idx] = 1;
+
+        applied++;
+    }
+
+    GLB_FreeItem(item);
+
+    // re-lock sprites for any weapon whose art fields moved; a bad lump
+    // number puts that one weapon back to stock and the rest stand
+    for (i = 0; i <= LAST_WEAPON; i++)
+    {
+        if (!touched[i])
+            continue;
+
+        if (!RelinkShotArt(&shot_lib[i]))
+        {
+            LOG_Printf("weapons config: weapon %d has no item %d - reverted",
+                i, shot_lib[i].lumpnum);
+            shot_lib[i] = shot_lib_stock[i];
+        }
+    }
+
+    if (applied)
+        LOG_Printf("weapons config: %d override(s) applied", applied);
+}
+
+/***************************************************************************
+SHOTS_LoadGunConfig () - Re-reads every moddable weapon setting.
+
+Called at startup and again on every mod hot-apply, so it starts from the
+stock table each time and lets whatever is mounted now write over it.
+ ***************************************************************************/
+void
+SHOTS_LoadGunConfig(
+    void
+)
+{
+    if (shot_lib_saved)
+        memcpy(shot_lib, shot_lib_stock, sizeof(shot_lib));
+
+    LoadPlayerGun();
+    LoadWeaponConfig();
 }
 
 /***************************************************************************
@@ -724,6 +974,9 @@ SHOTS_Init(
     slib->hlx = LE_LONG(slib->h->width) >> 1;
     slib->hly = LE_LONG(slib->h->height) >> 1;
     slib->ht = S_GRALL;
+
+    memcpy(shot_lib_stock, shot_lib, sizeof(shot_lib));
+    shot_lib_saved = 1;
 }
 
 /***************************************************************************

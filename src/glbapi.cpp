@@ -858,6 +858,35 @@ GLB_FreeAll(
 }
 
 /***************************************************************************
+GLB_ValidItem () - TRUE if a handle names a real item.
+
+Mod-supplied values reach the fetch path (WEAPONS_TXT can set a weapon's
+lumpnum), and ASSERT compiles to nothing in every build, so anything that
+comes from outside the engine has to be bounds-checked before it is used
+to index filedesc[] or the item array.
+ ***************************************************************************/
+int
+GLB_ValidItem(
+	int handle                    // INPUT : handle of item
+)
+{
+	ITEM_H itm;
+
+	if (handle < 0 || handle == (int)~0)
+		return 0;
+
+	itm.handle = MOD_Resolve(handle);
+
+	if (itm.id.filenum >= (WORD)num_glbs)
+		return 0;
+
+	if (itm.id.itemnum >= (WORD)filedesc[itm.id.filenum].items)
+		return 0;
+
+	return 1;
+}
+
+/***************************************************************************
  GLB_ItemSize() - Returns Size of Item
  ***************************************************************************/
 int                               // RETURN: sizeof ITEM

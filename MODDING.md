@@ -36,8 +36,9 @@ A mod can do four things:
 3. **Alias** existing game items to each other, via the manifest — no data
    copied at all. `NightOps.glb` is 84 bytes: it points every `LPLAYER_PIC`
    (day player ship) at `DPLAYER_PIC` (night ship) and nothing else.
-4. **Retune the player's forward cannon** and airframe, via a
-   `PLAYRGUN_TXT` item — see below.
+4. **Retune the weapons**: a `PLAYRGUN_TXT` item redefines the player's
+   forward cannon and airframe, and a `WEAPONS_TXT` item reaches every
+   other weapon in the game — see below.
 
 ## Your first mod, in about two minutes
 
@@ -114,11 +115,77 @@ twin guns are untouched. Changes hot-apply with the mod toggle.
 The shipped `BulletHose.glb` is a worked example: one centered barrel,
 maximum cyclic rate, double damage.
 
-**The special weapons are not moddable.** Plasma, micro and dumb missiles,
-the minigun, turret, missile pods, bombs, the pulse cannon, forward laser
-and death ray are all defined in `shot_lib[]` in `src/shots.cpp` and can
-only be changed by editing and rebuilding the engine. `PLAYRGUN_TXT`
-reaches the forward cannon only.
+`PLAYRGUN_TXT` reaches the forward cannon only. Everything else is
+`WEAPONS_TXT`, below.
+
+## Special weapons
+
+A `WEAPONS_TXT` item retunes any weapon in the game. One override per
+line:
+
+```
+<WEAPON> <FIELD> <value>
+```
+
+```
+PLASMA DAMAGE 4
+DEATHRAY RATE 3
+MICRO SPEED 12
+BOMB SMOKE 1
+```
+
+Names are case-insensitive. Unknown weapons and unknown fields are logged
+to `RAPTOR.LOG` and skipped, so a typo costs you one line, not the mod.
+
+**Weapons:** `FORWARD` `PLASMA` `MICRO` `DUMBFIRE` `MINIGUN` `TURRET`
+`PODS` `AIRMISSLE` `GRDMISSLE` `BOMB` `ENERGYGRAB` `MEGABOMB` `PULSE`
+`LASER` `DEATHRAY`
+
+**Fields:**
+
+| Field | Effect |
+|---|---|
+| `DAMAGE` | damage per hit |
+| `RATE` | frames between shots; lower is faster |
+| `SPEED` | starting speed |
+| `MAXSPEED` | speed cap for accelerating shots |
+| `SHADOW` | 1 draws a ground shadow |
+| `SMOKE` | 1 adds a smoke trail |
+| `DELAY` | 1 delays the animation start |
+| `PLOT` | 1 uses the slower per-pixel plot path |
+| `MOVE` | 0 pins the shot in place |
+| `HITTYPE` | what it can hit: 0 all, 1 air, 2 ground, 3 ground+all, 4 tiles, 5 suck |
+| `FOLLOWX` / `FOLLOWY` | 1 makes the shot track the player on that axis |
+| `TRACK` | 1 traces the movement path for hits instead of testing the endpoint |
+| `BEAM` | 0 normal shot, 1 line, 2 beam |
+| `LUMP` | item number of the first sprite frame |
+| `FRAMES` | number of animation frames, 1–10 |
+| `STARTFRAME` | frame the animation starts on |
+
+Settings apply over the stock table every time the mod set changes, so
+switching the mod off puts the originals straight back.
+
+> ### ⚠ There are no guard rails here
+>
+> These are the engine's own internals, exposed as-is. Nothing is checked
+> for balance, playability, or whether the combination makes any sense —
+> you can give the death ray a one-frame rate, hand the mega bomb a
+> homing flag, or point the plasma gun at the cursor sprite. Some of what
+> you can express will look broken, feel awful, or make a weapon useless.
+> **That is allowed on purpose.** Go find the fun.
+>
+> The one thing the engine does enforce is memory safety. `FRAMES` is
+> clamped to the 1–10 the sprite table holds, `STARTFRAME` is forced into
+> range, and a `LUMP` that doesn't name a real item reverts *that weapon*
+> to stock and logs it rather than reading whatever happened to be in
+> memory. Other weapons in the same file still apply.
+>
+> If you break your game with this, that's the feature working. Turn the
+> mod off in the MODS menu and everything returns to stock — no
+> reinstall, no file surgery.
+
+Item numbers for `LUMP` come from the game's data; browse them with the
+[Raptor Map Editor](https://github.com/Alexbeav/raptor-map-editor).
 
 ## Building a mod with art
 
