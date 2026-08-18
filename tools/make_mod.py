@@ -20,7 +20,10 @@ The folder may contain:
 PNGs are quantized to the game palette (read from FILE0000.GLB in --game,
 default: the current directory); pixels with alpha < 128 are transparent.
 Each image is encoded in the same format (block or sprite) as the base item
-it overrides, so both UI art and in-game sprites work. Requires Pillow.
+it overrides, so both UI art and in-game sprites work.
+
+Only *.png packing needs Pillow; text-only mods (aliases, PLAYRGUN_TXT)
+and sound mods build with a stock Python 3.10+ install.
 """
 import argparse
 import sys
@@ -77,11 +80,6 @@ def main():
                     help="folder containing FILE0000.GLB (for the palette)")
     args = ap.parse_args()
 
-    try:
-        from PIL import Image
-    except ImportError:
-        sys.exit("Pillow is required: pip install pillow")
-
     pngs = sorted(args.folder.glob("*.png"), key=item_sort_key)
     wavs = sorted(args.folder.glob("*.wav"), key=item_sort_key)
     txts = sorted(p for p in args.folder.glob("*.txt") if p.name.lower() != "modinfo.txt")
@@ -94,6 +92,10 @@ def main():
     palette = None
 
     if pngs:
+        try:
+            from PIL import Image
+        except ImportError:
+            sys.exit("Pillow is required to pack images: pip install pillow")
         try:
             glbs = GlbSet(args.game)
             palette = load_palette(glbs)
