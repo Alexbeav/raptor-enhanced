@@ -877,10 +877,10 @@ GLB_ValidItem(
 
 	itm.handle = MOD_Resolve(handle);
 
-	if (itm.id.filenum >= (WORD)num_glbs)
+	if ((int)itm.id.filenum >= num_glbs)
 		return 0;
 
-	if (itm.id.itemnum >= (WORD)filedesc[itm.id.filenum].items)
+	if ((int)itm.id.itemnum >= filedesc[itm.id.filenum].items)
 		return 0;
 
 	return 1;
