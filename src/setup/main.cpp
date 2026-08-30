@@ -170,7 +170,7 @@ void GetSetupSettings(void)
 	fullscreen = INI_GetPreferenceLong("Video", "fullscreen", 0);
 	aspect_ratio = INI_GetPreferenceLong("Video", "aspect_ratio_correct", 1);
 	txt_fullscreen = INI_GetPreferenceLong("Video", "txt_fullscreen", 0);
-	smooth_motion = INI_GetPreferenceLong("Video", "smooth_motion", 1);
+	smooth_motion = INI_GetPreferenceLong("Video", "smooth_motion", 0);
 	oplemu = INI_GetPreferenceLong("Music", "OplEmu", 0);
 	haptic = INI_GetPreferenceLong("Setup", "Haptic", 1);
 	joy_ipt_MenuNew = INI_GetPreferenceLong("Setup", "joy_ipt_MenuNew", 0);
