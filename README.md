@@ -1,6 +1,6 @@
 # Raptor Enhanced Consoles
 
-A fork of the Enhanced open-source Raptor engine port ([Alexbrev/raptor-enhanced](https://github.com/Alexbeav/raptor-enhanced),
+A fork of the Enhanced open-source Raptor engine port ([RetroGamer02/raptor-enhanced](https://github.com/RetroGamer02/raptor-enhanced),
 based on the reverse-engineered codebase by nukeykt), extended with engine
 support for **Delta Sector** — an optional community-made 4th campaign
 (9 new waves). The campaign data is installed into your own copies of the
@@ -18,7 +18,7 @@ the browser. The development history of both projects is chronicled in its
 ## Quick start
 
 1. Download the latest package from
-   [Raptor Enhanced releases](https://github.com/Alexbeav/raptor-enhanced/releases/latest) —
+   [Raptor Reclawed releases](https://github.com/Alexbeav/raptor-reclawed/releases/latest) —
    a Windows zip or a Linux x64 tarball.
 2. Extract it into a folder containing your legally obtained Raptor v1.2+
    `FILE0000.GLB`–`FILE0004.GLB` data files, then run `raptor.exe`
@@ -29,19 +29,31 @@ the browser. The development history of both projects is chronicled in its
    generate its patched archives locally in the
    [Raptor Map Editor](https://alexbeav.github.io/raptor-map-editor/).
 
-Releases are packaged automatically by CI on version tags: the same engine
-sources build for Windows (MSVC) and Linux (GCC/SDL2/ALSA). The upstream
+CI builds the same engine sources on every push — Windows (MSVC and CMake),
+Linux (GCC/SDL2/ALSA), 3DS and Switch — and uploads them as per-push build
+artifacts; there is no tag-triggered release automation. The upstream
 build and configuration reference below is retained from that project.
+
+Repo note: the GitHub repo was renamed
+[Alexbeav/raptor-reclawed](https://github.com/Alexbeav/raptor-reclawed)
+(old `raptor-enhanced` links redirect). This console work lives on its
+`psp` branch and descends from the RetroGamer02 console-port lineage
+(nukeykt → skynettx → RetroGamer02); the desktop "Raptor Reclawed"
+engine is a separate line of development in the same repo.
 
 ## Fork engine options
 
 Beyond Delta Sector support, this fork adds two engine options, both
 configurable in Raptor Setup under **Additional Features** or in `SETUP.INI`:
 
-- **Smooth motion** (`[Video] smooth_motion=1`, **on** by default): game
+- **Smooth motion** (`[Video] smooth_motion=1`, **off** by default): game
   logic still runs at the original 35 Hz, but sprite and scroll positions
-  are interpolated for fluid 70 Hz motion. Set `smooth_motion=0` for the
-  original presentation.
+  are interpolated across extra presented sub-frames — 3 per tick on
+  desktop builds (105 Hz effective), 2 on PSP (70 Hz). The key is not
+  written to `SETUP.INI` automatically; enable it by adding
+  `smooth_motion=1` under `[Video]`, or via Raptor Setup. On PSP the
+  choice is fixed at build time instead (`make SMOOTH=0|1`, on by
+  default), so a stale memory-stick INI can't flip it.
 - **Selectable OPL music emulator** (`[Music] OplEmu=0`, Nuked by default):
   music is synthesized with the cycle-accurate
   [Nuked OPL3](https://github.com/nukeykt/Nuked-OPL3) core. `OplEmu=1`
@@ -50,6 +62,25 @@ configurable in Raptor Setup under **Additional Features** or in `SETUP.INI`:
   handheld ports. Ports can also compile a core out entirely by defining
   `OPL_NO_NUKED` or `OPL_NO_DBOPL` and dropping the matching source file
   (see `src/opl_core.h`).
+
+## Build matrix
+
+The same sources build for every target from the repository root:
+
+- `Makefile.psp` — PSPSDK (`psp-gcc` via `build.mak`), produces `EBOOT.PBP`.
+  SDL2 for PSP must be built/installed once beforehand (see the Makefile
+  header).
+- `Makefile.3ds` — devkitARM (`DEVKITARM` must be set), produces
+  `.3dsx`/`.smdh`. Audio needs a DSP dump (see below).
+- `Makefile.nx` — devkitPro libnx (`DEVKITPRO` must be set), produces a
+  Switch `.nro`.
+- `Makefile.xbox` — nxdk (`NXDK_DIR`), produces an original-Xbox
+  `.xbe`/`.iso`.
+- `win32build.bat` — interactive menu driving the MSVC solution
+  (win32/win64 release builds).
+- `osxbuild.sh` — interactive menu for macOS (aarch64/x86-64) via CMake.
+- `CMakeLists.txt` (desktop) — builds the `raptor` engine and a separate
+  `raptorsetup` executable.
 
 ---
 
@@ -69,7 +100,6 @@ Original Raptor Call Of The Shadows author Scott Host is working on a new modern
 You need the original assets (GLB files) from Raptor Call Of The Shadows shareware or full version 1.2 or higher.
 Important: No older versions before 1.2 are compatible! You have to take care of these files yourself.  
 The assets can be loaded from the current working directory (Raptor directory) or from the external system specific directory.
-**Please note that the release build version 0.8.0 does not support the external system specific directory and manages all assets, config and save files in the current working directory.**
 The external system specific directories are the following:
 ```
  Windows: Users\Username\AppData\Roaming\Raptor\  
