@@ -29,10 +29,9 @@ the browser. The development history of both projects is chronicled in its
    generate its patched archives locally in the
    [Raptor Map Editor](https://alexbeav.github.io/raptor-map-editor/).
 
-CI builds the same engine sources on every push — Windows (MSVC and CMake),
-Linux (GCC/SDL2/ALSA), 3DS and Switch — and uploads them as per-push build
-artifacts; there is no tag-triggered release automation. The upstream
-build and configuration reference below is retained from that project.
+There is currently no CI; builds are produced locally via the build matrix
+below. The upstream build and configuration reference further down is
+retained from that project.
 
 Repo note: the GitHub repo was renamed
 [Alexbeav/raptor-reclawed](https://github.com/Alexbeav/raptor-reclawed)
@@ -71,7 +70,9 @@ The same sources build for every target from the repository root:
   SDL2 for PSP must be built/installed once beforehand (see the Makefile
   header).
 - `Makefile.3ds` — devkitARM (`DEVKITARM` must be set), produces
-  `.3dsx`/`.smdh`. Audio needs a DSP dump (see below).
+  `.3dsx`/`.smdh`. Audio needs a DSP dump (see below). Expects a prebuilt
+  SDL2 tree at `./3DS-SDL2-2.30.1` (no longer vendored — build it from the
+  3DS-SDL2 altered source linked below).
 - `Makefile.nx` — devkitPro libnx (`DEVKITPRO` must be set), produces a
   Switch `.nro`.
 - `Makefile.xbox` — nxdk (`NXDK_DIR`), produces an original-Xbox
